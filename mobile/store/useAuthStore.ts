@@ -198,12 +198,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
         await triggerHaptic('success');
+        return {};
       } else {
-        // Confirmation email required
-        set({ isLoading: false });
+        // Confirmation email required by Supabase project settings
+        const confirmMsg = 'Account registered! Please confirm your email before signing in, or disable "Confirm email" in Supabase Auth settings to log in immediately.';
+        set({ authError: confirmMsg, isLoading: false });
+        await triggerHaptic('selection');
+        return { error: confirmMsg };
       }
-
-      return {};
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       set({ authError: message, isLoading: false });
@@ -233,6 +235,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         let friendlyMsg = error.message;
         if (error.message.includes('Invalid login credentials')) {
           friendlyMsg = 'Incorrect email or password. Please try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          friendlyMsg = 'Your email has not been confirmed yet. Please check your inbox, or disable "Confirm email" in Supabase Auth settings.';
         }
         set({ authError: friendlyMsg, isLoading: false });
         await triggerHaptic('error');

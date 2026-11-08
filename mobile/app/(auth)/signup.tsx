@@ -76,8 +76,8 @@ export default function SignupScreen() {
     if (!res.error) {
       // If immediate session created, proceed to onboarding
       router.replace('/onboarding');
-    } else if (res.error.toLowerCase().includes('confirm')) {
-      setIsSuccessMessage('Confirmation email sent! Please check your inbox.');
+    } else if (res.error.toLowerCase().includes('confirm') || res.error.toLowerCase().includes('registered')) {
+      setIsSuccessMessage(res.error);
     }
   };
 
