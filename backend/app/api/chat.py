@@ -12,6 +12,8 @@ from app.repositories.memory_repository import memory_repository
 from app.repositories.profile_repository import profile_repository
 from app.services.memory_service import memory_service, get_crisis_response, CRISIS_RESPONSE
 from app.services.ai_provider import get_ai_provider
+from app.core.config import settings
+from app.orchestration.graph import stream_orchestrated_chat
 
 logger = logging.getLogger("solace.chat")
 router = APIRouter(prefix="/chat", tags=["AI Chat Stream"])
@@ -172,8 +174,42 @@ async def stream_chat(
             }
             yield f"data: {json.dumps(err_payload)}\n\n"
 
+    # 4. Stream selector: LangGraph Orchestration with safe native fallback
+    async def chat_stream_dispatcher() -> AsyncIterator[str]:
+        if getattr(settings, "ENABLE_LANGGRAPH_ROUTING", False):
+            has_yielded = False
+            try:
+                logger.info(f"Routing chat through LangGraph orchestration (session={session_id})")
+                async for chunk in stream_orchestrated_chat(
+                    user_id=user_id,
+                    session_id=session_id,
+                    user_message_id=user_msg.id,
+                    content=data.content,
+                    mode=data.mode or "standard",
+                    user_email=current_user.email,
+                ):
+                    has_yielded = True
+                    yield chunk
+                return
+            except Exception as e:
+                logger.error(f"LangGraph execution exception: {e}")
+                if has_yielded:
+                    # Once streaming has begun, never restart to avoid duplicate content
+                    err_payload = {
+                        "event": "error",
+                        "error": "The companion encountered an interruption during reflection.",
+                        "code": "ORCHESTRATION_ERROR",
+                    }
+                    yield f"data: {json.dumps(err_payload)}\n\n"
+                    return
+                logger.warning("Falling back to native SSE stream prior to first event.")
+
+        # Default audited native path
+        async for chunk in sse_event_generator():
+            yield chunk
+
     return StreamingResponse(
-        sse_event_generator(),
+        chat_stream_dispatcher(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

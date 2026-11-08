@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-11-09T01:40:00Z",
+  "summary": {
+    "avg_native_ttft_ms": 330.6,
+    "avg_graph_ttft_ms": 1531.2,
+    "avg_delta_ms": 1200.6,
+    "safety_parity_pct": 100.0
+  },
+  "scenarios": [
+    {
+      "scenario": "Scenario A: Everyday Casual Reflection",
+      "native_ttft_ms": 436.0,
+      "native_total_ms": 1840.7,
+      "graph_ttft_ms": 3285.3,
+      "graph_total_ms": 4630.3,
+      "delta_ttft_ms": 2849.3,
+      "parity": true
+    },
+    {
+      "scenario": "Scenario B: Feeling Overlooked / Vulnerable",
+      "native_ttft_ms": 450.4,
+      "native_total_ms": 1792.7,
+      "graph_ttft_ms": 1408.6,
+      "graph_total_ms": 2780.1,
+      "delta_ttft_ms": 958.2,
+      "parity": true
+    },
+    {
+      "scenario": "Scenario C: Rant Mode Venting",
+      "native_ttft_ms": 436.0,
+      "native_total_ms": 1869.1,
+      "graph_ttft_ms": 1429.5,
+      "graph_total_ms": 2843.7,
+      "delta_ttft_ms": 993.5,
+      "parity": true
+    },
+    {
+      "scenario": "Scenario D: Acute Crisis Interception",
+      "native_ttft_ms": 0.0,
+      "native_total_ms": 0.0,
+      "graph_ttft_ms": 1.4,
+      "graph_total_ms": 2.1,
+      "delta_ttft_ms": 1.4,
+      "parity": true
+    }
+  ]
+}

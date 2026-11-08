@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # Crisis & Safety Localization ("IN", "US", "GB", "GLOBAL")
     CRISIS_REGION: str = "IN"
 
+    # Orchestration & Feature Flags
+    ENABLE_LANGGRAPH_ROUTING: bool = False
+
     # Server Configuration
     HOST: str = "0.0.0.0"
     PORT: int = 8000
