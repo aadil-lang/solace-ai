@@ -29,18 +29,17 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
     if (!isInitialized) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inOnboarding = segments[0] === 'onboarding';
-    const isAuthenticated = Boolean(user || isGuest);
+    const hasActiveAccount = Boolean(user && !isGuest);
 
-    if (!isAuthenticated) {
-      // Unauthenticated users belong in (auth)
+    if (!hasActiveAccount && !isGuest) {
+      // Completely logged out users belong in (auth)
       if (!inAuthGroup) {
         router.replace('/(auth)/login');
       }
-    } else {
-      // Authenticated users
+    } else if (hasActiveAccount) {
+      // Signed in users belong in app or onboarding
       if (inAuthGroup) {
-        if (!isGuest && profile && !profile.onboarding_completed) {
+        if (profile && !profile.onboarding_completed) {
           router.replace('/onboarding');
         } else {
           router.replace('/(tabs)');

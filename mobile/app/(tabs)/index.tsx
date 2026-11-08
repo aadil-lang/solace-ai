@@ -66,7 +66,7 @@ const QUICK_ACTIVITIES: WellnessActivity[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { profile, isGuest } = useAuthStore();
+  const { profile, isGuest, exitGuestMode } = useAuthStore();
   const { checkIns, todayCheckIn, isLoading: isCheckInLoading, fetchHistory, recordCheckIn } = useCheckInStore();
 
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
@@ -129,10 +129,17 @@ export default function HomeScreen() {
         {/* A. Personalized Greeting */}
         <View style={styles.greetingSection}>
           {isGuest && (
-            <View style={styles.guestBadge}>
+            <TouchableOpacity
+              style={styles.guestBadge}
+              onPress={async () => {
+                await exitGuestMode();
+                router.replace('/(auth)/login');
+              }}
+              activeOpacity={0.8}
+            >
               <Ionicons name="leaf-outline" size={12} color={theme.colors.forest} style={{ marginRight: 4 }} />
-              <Text style={styles.guestBadgeText}>Guest Session</Text>
-            </View>
+              <Text style={styles.guestBadgeText}>Guest Session • Tap to Sign In</Text>
+            </TouchableOpacity>
           )}
           <Text style={styles.greetingTitle}>
             {getGreeting()}, {displayName}.

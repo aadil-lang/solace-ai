@@ -43,7 +43,7 @@ const CATEGORY_COLORS: Record<MemoryCategory, { bg: string; text: string }> = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, user, isGuest, signOut, updateProfile } = useAuthStore();
+  const { profile, user, isGuest, signOut, exitGuestMode, updateProfile } = useAuthStore();
   const { connectionStatus, checkBackendHealth, apiUrl } = useAppStore();
   const {
     memories,
@@ -112,7 +112,7 @@ export default function ProfileScreen() {
     Alert.alert(
       isGuest ? 'Leave Guest Mode?' : 'Sign Out?',
       isGuest
-        ? 'Your guest session is local and will be cleared.'
+        ? 'Return to the login screen to sign in or create an account.'
         : 'Are you sure you want to sign out of Solace?',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -120,7 +120,11 @@ export default function ProfileScreen() {
           text: isGuest ? 'Leave' : 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await signOut();
+            if (isGuest) {
+              await exitGuestMode();
+            } else {
+              await signOut();
+            }
             router.replace('/(auth)/login');
           },
         },

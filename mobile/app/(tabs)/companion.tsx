@@ -31,7 +31,12 @@ const CONVERSATION_STARTERS = [
 
 export default function CompanionScreen() {
   const router = useRouter();
-  const { profile, isGuest } = useAuthStore();
+  const { profile, isGuest, exitGuestMode } = useAuthStore();
+
+  const handleExitGuestToAuth = async () => {
+    await exitGuestMode();
+    router.replace('/(auth)/login');
+  };
   const {
     messages,
     isStreaming,
@@ -208,7 +213,7 @@ export default function CompanionScreen() {
               </View>
               <Button
                 title="Sign In or Create Account"
-                onPress={() => router.push('/(auth)/login')}
+                onPress={handleExitGuestToAuth}
                 style={styles.guestGateAuthBtn}
               />
               <TouchableOpacity
@@ -298,7 +303,7 @@ export default function CompanionScreen() {
         {isGuest ? (
           <TouchableOpacity
             style={styles.guestLockedInputBar}
-            onPress={() => router.push('/(auth)/login')}
+            onPress={handleExitGuestToAuth}
             activeOpacity={0.85}
           >
             <Ionicons name="lock-closed-outline" size={16} color={theme.colors.textMuted} style={{ marginRight: 8 }} />

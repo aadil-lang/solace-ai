@@ -25,6 +25,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
+  exitGuestMode: () => Promise<void>;
   fetchProfile: () => Promise<void>;
   updateProfile: (updates: UserProfileUpdate) => Promise<{ success: boolean; error?: string }>;
   completeOnboarding: (
@@ -269,8 +270,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     set({ isLoading: true });
     try {
-      await supabase.auth.signOut();
+      if (get().session) {
+        try {
+          await supabase.auth.signOut();
+        } catch (authErr) {
+          console.warn('Supabase auth.signOut warning:', authErr);
+        }
+      }
       await ExpoSecureStoreAdapter.removeItem(GUEST_KEY);
+    } catch (err: unknown) {
+      console.warn('Sign out error:', err);
+    } finally {
       set({
         session: null,
         user: null,
@@ -280,9 +290,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         authError: null,
       });
       await triggerHaptic('selection');
+    }
+  },
+
+  exitGuestMode: async () => {
+    set({ isLoading: true });
+    try {
+      await ExpoSecureStoreAdapter.removeItem(GUEST_KEY);
     } catch (err: unknown) {
-      console.warn('Sign out error:', err);
-      set({ isLoading: false });
+      console.warn('Failed to clear guest key:', err);
+    } finally {
+      set({
+        session: null,
+        user: null,
+        profile: null,
+        isGuest: false,
+        isLoading: false,
+        authError: null,
+      });
+      await triggerHaptic('selection');
     }
   },
 
