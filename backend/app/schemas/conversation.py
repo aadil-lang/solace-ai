@@ -42,4 +42,6 @@ class ChatStreamRequest(BaseModel):
     """Schema for sending a chat message to the streaming assistant."""
     content: str = Field(min_length=1, max_length=2000, description="User's reflection or message")
     session_id: Optional[str] = Field(default=None, description="Existing session ID, or null to auto-create")
+    mode: Optional[Literal["standard", "rant"]] = Field(default="standard", description="Conversation mode: 'standard' or 'rant'")
+
 

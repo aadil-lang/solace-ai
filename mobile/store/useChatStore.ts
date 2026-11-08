@@ -12,12 +12,14 @@ interface ChatState {
   streamingText: string;
   appliedMemoriesCount: number;
   lastFailedMessage: string | null;
+  isRantMode: boolean;
   error: string | null;
 
+  setRantMode: (enabled: boolean) => void;
   loadSessions: () => Promise<void>;
   selectSession: (sessionId: string) => Promise<void>;
   startNewSession: () => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, modeOverride?: 'standard' | 'rant') => Promise<void>;
   retryLastMessage: () => Promise<void>;
   clearError: () => void;
 }
@@ -30,7 +32,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingText: '',
   appliedMemoriesCount: 0,
   lastFailedMessage: null,
+  isRantMode: false,
   error: null,
+
+  setRantMode: (enabled: boolean) => set({ isRantMode: enabled }),
 
   loadSessions: async () => {
     const isGuest = useAuthStore.getState().isGuest;
@@ -70,10 +75,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
-  sendMessage: async (content: string) => {
+  sendMessage: async (content: string, modeOverride?: 'standard' | 'rant') => {
     const trimmed = content.trim();
     if (!trimmed || get().isStreaming) return;
 
+    const mode = modeOverride || (get().isRantMode ? 'rant' : 'standard');
     const { activeSessionId, messages, lastFailedMessage } = get();
     const tempUserId = useAuthStore.getState().user?.id || 'user';
     const tempMsgId = `temp_user_${Date.now()}`;
@@ -144,7 +150,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           error: errMsg,
         });
       },
-    });
+    }, mode);
   },
 
   retryLastMessage: async () => {

@@ -15,6 +15,7 @@ import { theme } from '@/constants/theme';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { WellnessActivity } from '@/types';
+import { BoxBreathingVisualizer } from '@/components/BoxBreathingVisualizer';
 
 const ACTIVITIES: WellnessActivity[] = [
   {
@@ -72,6 +73,7 @@ type CategoryFilter = 'all' | 'breathing' | 'journaling' | 'grounding';
 export default function DiscoverScreen() {
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [activeActivity, setActiveActivity] = useState<WellnessActivity | null>(null);
+  const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(false);
 
   const filtered = filter === 'all'
     ? ACTIVITIES
@@ -187,12 +189,38 @@ export default function DiscoverScreen() {
               </View>
 
               <Button
-                title="Start Guided Session"
-                onPress={() => setActiveActivity(null)}
+                title={activeActivity.category === 'breathing' ? 'Start Interactive Breathing' : 'Complete Practice'}
+                onPress={() => {
+                  if (activeActivity.category === 'breathing') {
+                    setIsVisualizerActive(true);
+                  } else {
+                    setActiveActivity(null);
+                  }
+                }}
                 style={styles.modalActionButton}
               />
             </View>
           </View>
+        </Modal>
+      )}
+
+      {/* Interactive Box Breathing Visualizer Modal */}
+      {isVisualizerActive && (
+        <Modal
+          animationType="fade"
+          transparent={false}
+          visible={isVisualizerActive}
+          onRequestClose={() => {
+            setIsVisualizerActive(false);
+            setActiveActivity(null);
+          }}
+        >
+          <BoxBreathingVisualizer
+            onClose={() => {
+              setIsVisualizerActive(false);
+              setActiveActivity(null);
+            }}
+          />
         </Modal>
       )}
     </SafeAreaView>

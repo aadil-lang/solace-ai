@@ -47,7 +47,11 @@ async def stream_chat(
     user_msg = await conversation_repository.create_message(
         session_id=session_id,
         user_id=user_id,
-        data=ConversationMessageCreate(role="user", content=data.content),
+        data=ConversationMessageCreate(
+            role="user",
+            content=data.content,
+            metadata={"mode": data.mode or "standard"}
+        ),
     )
 
     # 3. Generator for SSE stream
@@ -112,7 +116,7 @@ async def stream_chat(
             recent_check_ins=recent_check_ins,
         )
 
-        system_prompt = memory_service.build_system_prompt(profile, context_summary)
+        system_prompt = memory_service.build_system_prompt(profile, context_summary, mode=data.mode or "standard")
 
         # Build message history for provider
         history_payload = []
@@ -134,6 +138,7 @@ async def stream_chat(
             # Persist completed assistant message
             metadata = {
                 "memories_used": [m.id for m in matched_memories],
+                "mode": data.mode or "standard",
             }
             assistant_msg = await conversation_repository.create_message(
                 session_id=session_id,

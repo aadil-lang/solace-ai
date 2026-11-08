@@ -20,6 +20,11 @@ class AIProviderInterface(ABC):
         """Stream response tokens from the underlying model."""
         pass
 
+    @abstractmethod
+    async def transcribe_audio(self, audio_bytes: bytes, mime_type: str = "audio/mp4") -> str:
+        """Transcribe speech in audio bytes into clean text."""
+        pass
+
 
 class GeminiProvider(AIProviderInterface):
     """Google Gemini AI provider implementation using google-genai SDK."""
@@ -82,6 +87,33 @@ class GeminiProvider(AIProviderInterface):
             if hasattr(chunk, "text") and chunk.text:
                 yield chunk.text
 
+    async def transcribe_audio(self, audio_bytes: bytes, mime_type: str = "audio/mp4") -> str:
+        self._ensure_client()
+        from google.genai import types
+
+        def sync_transcribe():
+            try:
+                response = self._client.models.generate_content(
+                    model=self.model,
+                    contents=[
+                        types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+                        "Generate an accurate, clean transcription of the spoken words in this audio. "
+                        "Transcribe verbatim what the speaker said. "
+                        "Do not include timestamps, labels, analysis, or commentary. "
+                        "If no speech is detected or the audio is silent, return an empty string.",
+                    ],
+                )
+                return (response.text or "").strip()
+            except Exception as e:
+                raise SolaceException(
+                    message=f"Gemini transcription failed: {str(e)}",
+                    status_code=502,
+                    code="TRANSCRIPTION_FAILED"
+                )
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, sync_transcribe)
+
 
 class MockAIProvider(AIProviderInterface):
     """Deterministic Mock AI Provider for testing and local development without Gemini keys."""
@@ -102,6 +134,9 @@ class MockAIProvider(AIProviderInterface):
         for i, word in enumerate(words):
             await asyncio.sleep(0.02)
             yield word + (" " if i < len(words) - 1 else "")
+
+    async def transcribe_audio(self, audio_bytes: bytes, mime_type: str = "audio/mp4") -> str:
+        return "I've had a really overwhelming day and just need to get this off my chest."
 
 
 # Singleton reference or override for tests

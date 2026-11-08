@@ -260,6 +260,7 @@ class ApiService {
     content: string,
     sessionId: string | null,
     callbacks: ChatStreamCallbacks,
+    mode: 'standard' | 'rant' = 'standard',
     tokenOverride?: string | null
   ): Promise<void> {
     const url = `${this.baseUrl}${API_CONFIG.endpoints.chatStream}`;
@@ -277,7 +278,7 @@ class ApiService {
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ content, session_id: sessionId }),
+        body: JSON.stringify({ content, session_id: sessionId, mode }),
       });
 
       if (!response.ok) {
@@ -320,6 +321,24 @@ class ApiService {
       const message = err instanceof Error ? err.message : 'Chat connection failed.';
       callbacks.onError?.(message);
     }
+  }
+
+  /**
+   * Transcribe recorded audio via the backend Gemini multimodal speech recognition endpoint.
+   */
+  public async transcribeVoice(audioBase64: string, mimeType: string = 'audio/mp4'): Promise<string> {
+    const response = await this.fetchWithTimeout('/api/v1/voice/transcribe', {
+      method: 'POST',
+      body: JSON.stringify({ audio_base64: audioBase64, mime_type: mimeType }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || 'Voice transcription failed.');
+    }
+
+    const data = await response.json();
+    return data.text || '';
   }
 
   private processSSEBlock(block: string, callbacks: ChatStreamCallbacks): void {

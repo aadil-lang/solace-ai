@@ -28,7 +28,8 @@
       "usesCleartextTraffic": true,
       "permissions": [
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "RECORD_AUDIO"
       ]
     },
     "web": {
@@ -38,7 +39,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Solace to record your voice when you speak to your mindful companion."
+        }
+      ]
     ],
     "extra": {
       "router": {
