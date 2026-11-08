@@ -13,12 +13,20 @@
         "buildType": "apk"
       },
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://solace-ai-p2ft.onrender.com",
         "EXPO_PUBLIC_SUPABASE_URL": "https://wiilbnurygloomjyljbl.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5nbSBIV22IeUTGirWxzExA_LS3xLAAe",
-        "EXPO_PUBLIC_API_TIMEOUT_MS": "10000"
+        "EXPO_PUBLIC_API_TIMEOUT_MS": "15000"
       }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://solace-ai-p2ft.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://wiilbnurygloomjyljbl.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5nbSBIV22IeUTGirWxzExA_LS3xLAAe",
+        "EXPO_PUBLIC_API_TIMEOUT_MS": "15000"
+      }
+    }
   },
   "submit": {
     "production": {}
