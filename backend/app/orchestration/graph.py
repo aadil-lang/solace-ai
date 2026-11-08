@@ -198,3 +198,4 @@ async def stream_orchestrated_chat(
         # If tokens have already streamed, NEVER duplicate tokens or restart the generator
         err_msg = "The AI companion encountered a momentary pause. Please try again."
         yield f"data: {json.dumps({'event': 'error', 'error': err_msg, 'code': 'ORCHESTRATION_STREAM_ERROR'})}\n\n"
+

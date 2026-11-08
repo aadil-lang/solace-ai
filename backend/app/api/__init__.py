@@ -6,6 +6,7 @@ from app.api.conversations import router as conversation_router
 from app.api.memories import router as memory_router
 from app.api.chat import router as chat_router
 from app.api.voice import router as voice_router
+from app.api.poetry import router as poetry_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -15,6 +16,7 @@ api_router.include_router(conversation_router)
 api_router.include_router(memory_router)
 api_router.include_router(chat_router)
 api_router.include_router(voice_router)
+api_router.include_router(poetry_router)
 
 __all__ = [
     "api_router",
@@ -25,4 +27,5 @@ __all__ = [
     "memory_router",
     "chat_router",
     "voice_router",
+    "poetry_router",
 ]

@@ -17,6 +17,15 @@ from app.schemas.memory import (
     MemoryCategory,
     ConsentStatus,
 )
+from app.schemas.poetry import (
+    PoetryFormat,
+    PoetryTheme,
+    PoetryGenerateRequest,
+    PoetryGenerateResponse,
+    SavedPoemCreate,
+    SavedPoemResponse,
+    SavedPoemListResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -38,4 +47,11 @@ __all__ = [
     "MemoryListResponse",
     "MemoryCategory",
     "ConsentStatus",
+    "PoetryFormat",
+    "PoetryTheme",
+    "PoetryGenerateRequest",
+    "PoetryGenerateResponse",
+    "SavedPoemCreate",
+    "SavedPoemResponse",
+    "SavedPoemListResponse",
 ]

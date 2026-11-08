@@ -43,23 +43,32 @@ class PoetryGenerateResponse(BaseModel):
     reflection: str = Field(description="Grounded 1-2 sentence mindful closing thought")
     format: PoetryFormat
     theme: PoetryTheme
+    is_crisis: bool = Field(default=False, description="Whether crisis safety was triggered")
 
 class SavedPoemCreate(BaseModel):
-    title: str
-    content: str
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1)
     format: PoetryFormat
     theme: PoetryTheme
+    secondary_content: Optional[str] = None
+    reflection: Optional[str] = None
     metadata: Optional[dict] = Field(default_factory=dict)
 
 class SavedPoemResponse(BaseModel):
-    id: UUID
-    user_id: UUID
+    id: str
+    user_id: str
     title: str
     content: str
     format: PoetryFormat
     theme: PoetryTheme
+    secondary_content: Optional[str] = None
+    reflection: Optional[str] = None
     metadata: dict
-    created_at: datetime
+    created_at: str
+
+class SavedPoemListResponse(BaseModel):
+    items: List[SavedPoemResponse]
+    total: int
 ```
 
 ### 1.2 TypeScript Interfaces (`mobile/types/poetry.ts`)

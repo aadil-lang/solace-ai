@@ -177,3 +177,18 @@ async def get_current_user(
         detail="Unable to verify authentication token.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> Optional[AuthenticatedUser]:
+    """
+    FastAPI dependency for endpoints accessible to both guests and authenticated users.
+    Returns AuthenticatedUser if valid token provided, otherwise None.
+    """
+    if not credentials or not credentials.credentials:
+        return None
+    try:
+        return await get_current_user(credentials)
+    except Exception:
+        return None

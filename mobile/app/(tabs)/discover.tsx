@@ -16,6 +16,7 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { WellnessActivity } from '@/types';
 import { BoxBreathingVisualizer } from '@/components/BoxBreathingVisualizer';
+import { PoetryModal } from '@/components/PoetryModal';
 
 const ACTIVITIES: WellnessActivity[] = [
   {
@@ -74,6 +75,7 @@ export default function DiscoverScreen() {
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [activeActivity, setActiveActivity] = useState<WellnessActivity | null>(null);
   const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(false);
+  const [isPoetryModalOpen, setIsPoetryModalOpen] = useState<boolean>(false);
 
   const filtered = filter === 'all'
     ? ACTIVITIES
@@ -100,6 +102,27 @@ export default function DiscoverScreen() {
             Grounded practices for moments when you need balance.
           </Text>
         </View>
+
+        {/* Words of Solace — Creative Poetry Sanctuary */}
+        <TouchableOpacity
+          style={styles.wordsOfSolaceBanner}
+          onPress={() => setIsPoetryModalOpen(true)}
+          activeOpacity={0.88}
+        >
+          <View style={styles.wosBannerLeft}>
+            <View style={styles.wosBadgeRow}>
+              <Ionicons name="sparkles" size={13} color="#B5835A" />
+              <Text style={styles.wosBadgeText}>WORDS OF SOLACE</Text>
+            </View>
+            <Text style={styles.wosBannerTitle}>Contemplative Poetry</Text>
+            <Text style={styles.wosBannerSubtitle}>
+              Bespoke verses in English, اردو (Nastaliq), and Bilingual poems for your present state.
+            </Text>
+          </View>
+          <View style={styles.wosIconCircle}>
+            <Ionicons name="book-outline" size={24} color="#B5835A" />
+          </View>
+        </TouchableOpacity>
 
         {/* Filter Chips */}
         <View style={styles.filterRow}>
@@ -223,6 +246,12 @@ export default function DiscoverScreen() {
           />
         </Modal>
       )}
+
+      {/* Words of Solace Creative Poetry Modal */}
+      <PoetryModal
+        visible={isPoetryModalOpen}
+        onClose={() => setIsPoetryModalOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -391,6 +420,58 @@ const styles = StyleSheet.create({
   },
   modalActionButton: {
     marginTop: theme.spacing.xs,
+  },
+  wordsOfSolaceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FAF3EB',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#EFE0D0',
+    elevation: 2,
+    shadowColor: '#B5835A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  wosBannerLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  wosBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  wosBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B5835A',
+    letterSpacing: 0.8,
+  },
+  wosBannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B3630',
+    marginBottom: 4,
+  },
+  wosBannerSubtitle: {
+    fontSize: 12,
+    color: '#70665B',
+    lineHeight: 18,
+  },
+  wosIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EFE0D0',
   },
 });
 

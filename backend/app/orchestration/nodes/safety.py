@@ -29,3 +29,4 @@ async def safety_node(state: OrchestrationState) -> Dict[str, Any]:
         "is_crisis": False,
         "crisis_text": None,
     }
+

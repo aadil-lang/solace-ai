@@ -155,3 +155,5 @@ export interface WellnessActivity {
   description: string;
   icon: string;
 }
+
+export * from './poetry';

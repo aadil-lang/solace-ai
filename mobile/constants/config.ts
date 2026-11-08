@@ -32,6 +32,9 @@ export const API_CONFIG = {
     conversations: '/api/v1/conversations',
     memories: '/api/v1/memories',
     chatStream: '/api/v1/chat/stream',
+    poetryGenerate: '/api/v1/poetry/generate',
+    poetrySave: '/api/v1/poetry/save',
+    poetrySaved: '/api/v1/poetry/saved',
   },
 } as const;
 

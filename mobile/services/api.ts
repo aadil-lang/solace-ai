@@ -12,6 +12,11 @@ import {
   MemoryCreate,
   MemoryUpdate,
   MemorySuggestion,
+  PoetryGenerateRequest,
+  PoetryGenerateResponse,
+  SavedPoemCreate,
+  SavedPoem,
+  SavedPoemListResponse,
 } from '@/types';
 
 export interface ChatStreamCallbacks {
@@ -252,6 +257,70 @@ class ApiService {
     const response = await this.fetchWithTimeout(endpoint, { method: 'DELETE' }, token);
     if (!response.ok) {
       throw new Error(`Failed to delete memory (${response.status})`);
+    }
+  }
+
+  // --- Words of Solace (Poetry) ---
+  public async generatePoem(
+    request: PoetryGenerateRequest,
+    tokenOverride?: string | null
+  ): Promise<PoetryGenerateResponse> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.poetryGenerate,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      },
+      tokenOverride
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Poetry generation failed (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async savePoem(
+    data: SavedPoemCreate,
+    tokenOverride?: string | null
+  ): Promise<SavedPoem> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.poetrySave,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      tokenOverride
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to save poem (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async getSavedPoems(
+    limit: number = 50,
+    offset: number = 0,
+    tokenOverride?: string | null
+  ): Promise<SavedPoemListResponse> {
+    const endpoint = `${API_CONFIG.endpoints.poetrySaved}?limit=${limit}&offset=${offset}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, tokenOverride);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to fetch saved poems (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async deleteSavedPoem(
+    poemId: string,
+    tokenOverride?: string | null
+  ): Promise<void> {
+    const endpoint = `${API_CONFIG.endpoints.poetrySaved}/${poemId}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'DELETE' }, tokenOverride);
+    if (!response.ok) {
+      throw new Error(`Failed to delete poem (${response.status})`);
     }
   }
 

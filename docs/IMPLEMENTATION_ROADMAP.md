@@ -47,32 +47,31 @@ gantt
 
 ---
 
-### Phase 1: LangGraph Orchestration Foundation
+### Phase 1: LangGraph Orchestration Foundation (COMPLETED)
 - **Goal**: Implement LangGraph workflow routing behind `ENABLE_LANGGRAPH_ROUTING=false` (default) with zero disruption to streaming.
 - **Backend Tasks**:
-  - Create `backend/app/orchestration/`:
-    - `state.py`: Typed state machine (`CompanionState`, `WorkflowState`).
-    - `nodes/`: `safety_node.py`, `context_node.py`, `companion_node.py`, `error_node.py`.
-    - `graph.py`: Graph builder linking nodes with conditional edges.
-  - Wire `/chat/stream` to conditionally route through LangGraph when enabled, or use native fallback.
-  - Test TTFT and token yield rate parity against native generator.
-- **Dependencies**: `langgraph`, `langchain-core` in `backend/requirements.txt`.
-- **Gate / Parity Check**: Pass 12-scenario conversational quality audit without TTFT degradation (>500ms).
+  - Created `backend/app/orchestration/` (`state.py`, `nodes/`, `routing.py`, `graph.py`).
+  - Wired `/chat/stream` with safe native fallback and `astream_events(v2)` custom event token streaming.
+  - Benchmarked TTFT and latency parity against native generator.
+- **Status**: 14/14 tests passing. Report: `docs/LANGGRAPH_IMPLEMENTATION_REPORT.md`.
 
 ---
 
-### Phase 2: Words of Solace (Multilingual Poetry)
+### Phase 2: Words of Solace (Multilingual Poetry) (COMPLETED)
 - **Goal**: Dedicated poetry generation service with English, Urdu script (Nastaliq), Roman Urdu, and bilingual formats.
 - **Backend Tasks**:
-  - Implement `backend/app/schemas/poetry.py`.
-  - Implement `backend/app/services/poetry_service.py` with structured Gemini prompts for Nastaliq, Urdu phonetic consistency, and gentle reflections.
-  - Implement `backend/app/repositories/poetry_repository.py`.
-  - Add API endpoints in `backend/app/api/poetry.py` (`POST /poetry/generate`, `POST /poetry/save`, `GET /poetry/saved`, `DELETE /poetry/saved/{id}`).
+  - Implemented `backend/app/schemas/poetry.py`.
+  - Implemented `backend/app/services/poetry_service.py` with structured Gemini prompts for Nastaliq, Urdu phonetic consistency, and gentle reflections.
+  - Implemented `backend/app/repositories/poetry_repository.py`.
+  - Added API endpoints in `backend/app/api/poetry.py` (`POST /poetry/generate`, `POST /poetry/save`, `GET /poetry/saved`, `DELETE /poetry/saved/{id}`).
+  - Added migration `database/migrations/00004_words_of_solace.sql` with strict RLS.
 - **Mobile Tasks**:
-  - Create `mobile/store/usePoetryStore.ts`.
-  - Create `mobile/components/PoetryModal.tsx` and dedicated Words of Solace card in Discover.
-  - Ensure correct RTL Urdu font rendering and copy/save actions.
-- **Gate**: Verified generation of all 4 formats; clean save and delete under authenticated user RLS; guest local saving in memory/AsyncStorage.
+  - Created `mobile/types/poetry.ts`.
+  - Added poetry methods to `mobile/services/api.ts`.
+  - Created `mobile/store/usePoetryStore.ts` with local guest mode storage partitioning.
+  - Created `mobile/components/PoetryModal.tsx` with RTL Nastaliq typography, bilingual layout, and copy/save actions.
+  - Added Words of Solace sanctuary card in `mobile/app/(tabs)/discover.tsx`.
+- **Status**: 7/7 backend tests passing, 3/3 mobile test suites passing, Metro Android bundle verified.
 
 ---
 

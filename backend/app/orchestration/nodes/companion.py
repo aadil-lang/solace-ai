@@ -55,3 +55,4 @@ async def companion_node(state: OrchestrationState) -> Dict[str, Any]:
             "error_code": "STREAM_FAILURE",
             "has_streamed": len(full_text) > 0,
         }
+
