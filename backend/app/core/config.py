@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # AI Configuration
     AI_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = ""
-    AI_MODEL: str = "gemini-3.5-flash"
+    AI_MODEL: str = "gemini-3.5-flash-lite"
 
     # Crisis & Safety Localization ("IN", "US", "GB", "GLOBAL")
     CRISIS_REGION: str = "IN"
