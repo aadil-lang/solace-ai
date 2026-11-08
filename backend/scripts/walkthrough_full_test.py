@@ -114,3 +114,4 @@ time.sleep(2.0)
 capture("14_authenticated_profile.png")
 
 print("--- COMPLETED E2E AUTHENTICATED WALKTHROUGH ---")
+

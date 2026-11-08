@@ -68,3 +68,4 @@ time.sleep(1.5)
 capture("14_authenticated_profile.png")
 
 print("Finished capturing clean screens!")
+

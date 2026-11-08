@@ -968,3 +968,4 @@ ARTIFACT_HTML = os.path.join(ARTIFACT_DIR, "gallery.html")
 with open(ARTIFACT_HTML, "w", encoding="utf-8") as f:
     f.write(final_html)
 print(f"✓ Saved artifact gallery to: {ARTIFACT_HTML}")
+

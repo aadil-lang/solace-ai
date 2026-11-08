@@ -109,3 +109,4 @@ for idx, (filename, title, subtitle) in enumerate(SCREENS):
 # Save high-res collage
 collage.save(COLLAGE_PATH, "PNG", quality=95)
 print(f"✓ Saved master walkthrough collage to {COLLAGE_PATH} (size: {os.path.getsize(COLLAGE_PATH)} bytes)")
+

@@ -65,3 +65,4 @@ print("Tapping Sign In...")
 tap(540, 1545)
 time.sleep(3.5)
 capture("07_after_login_clean.png")
+
