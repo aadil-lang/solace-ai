@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.xxl,
+    paddingBottom: Platform.OS === 'android' ? 56 : theme.spacing.xxl,
     justifyContent: 'center',
     flexGrow: 1,
   },
