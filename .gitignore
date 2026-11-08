@@ -1,0 +1,41 @@
+# Node & Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# Python & Virtual Environments
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment Variables & Secrets (Keep .env.example checked in)
+.env
+.env.*
+**/.env
+**/.env.*
+backend/.env
+mobile/.env
+*.pem
+*.key
+
+# Native Builds (Continuous Native Generation)
+ios/
+android/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
