@@ -57,6 +57,7 @@ export default function CompanionScreen() {
     isStreaming,
     streamingText,
     error,
+    lastFailedMessage,
     appliedMemoriesCount,
     isRantMode,
     setRantMode,
@@ -532,6 +533,35 @@ export default function CompanionScreen() {
               <Ionicons name="checkmark-done" size={16} color="#B85D3B" style={{ marginRight: 6 }} />
               <Text style={styles.finishedVentingBtnText}>I&apos;m finished venting</Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Error Notice Bar with safe inspection and manual retry */}
+        {error && !isGuest && (
+          <View style={styles.errorNoticeBar}>
+            <View style={styles.errorNoticeContent}>
+              <Ionicons name="information-circle-outline" size={18} color="#D97706" style={{ marginRight: 6 }} />
+              <Text style={styles.errorNoticeText}>{error}</Text>
+            </View>
+            <View style={styles.errorNoticeActions}>
+              {lastFailedMessage && error.includes("wasn't sent") && (
+                <TouchableOpacity
+                  style={styles.errorRetryBtn}
+                  onPress={retryLastMessage}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.errorRetryText}>Retry</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.errorDismissBtn}
+                onPress={clearError}
+                activeOpacity={0.8}
+                accessibilityLabel="Dismiss error"
+              >
+                <Ionicons name="close" size={16} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -1176,5 +1206,47 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.xs + 1,
     color: theme.colors.forest,
     fontWeight: theme.typography.weights.medium,
+  },
+  errorNoticeBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF3C7',
+    borderTopWidth: 1,
+    borderTopColor: '#FDE68A',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 10,
+  },
+  errorNoticeContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  errorNoticeText: {
+    flex: 1,
+    fontSize: theme.typography.sizes.xs,
+    color: '#92400E',
+    lineHeight: 16,
+    fontWeight: theme.typography.weights.medium,
+  },
+  errorNoticeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorRetryBtn: {
+    backgroundColor: '#D97706',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  errorRetryText: {
+    fontSize: theme.typography.sizes.xs,
+    color: '#FFFFFF',
+    fontWeight: theme.typography.weights.semibold,
+  },
+  errorDismissBtn: {
+    padding: 4,
   },
 });

@@ -755,23 +755,33 @@ class ApiService {
           body: JSON.stringify({ content, session_id: sessionId, mode }),
         });
       } catch (connErr: unknown) {
-        // Connection error or network drop before receiving response headers
+        // Ambiguous connection failure: socket drop, timeout, or TCP reset could happen
+        // while or after the request reached the backend.
         callbacks.onError?.(
-          'Connection to Solace was interrupted before your message could be sent. Please tap to try again.'
+          "We couldn't confirm whether your message was sent. Check the conversation before trying again."
         );
         return;
       }
 
-      if (response.status === 502 || response.status === 503 || response.status === 504) {
+      // 504 Gateway Timeout: edge proxy timed out waiting for backend (ambiguous whether processed)
+      if (response.status === 504) {
         callbacks.onError?.(
-          'Solace is gently waking up or temporarily unavailable. Your message was not sent. Please tap to send again.'
+          "We couldn't confirm whether your message was sent. Check the conversation before trying again."
+        );
+        return;
+      }
+
+      // 502/503: Upstream container boot / reverse proxy rejection before backend processing (confirmed not sent)
+      if (response.status === 502 || response.status === 503) {
+        callbacks.onError?.(
+          "Your message wasn't sent. Please try again."
         );
         return;
       }
 
       if (!response.ok) {
         const errorJson = await response.json().catch(() => ({}));
-        const msg = errorJson?.error?.message || `Chat stream failed with status ${response.status}`;
+        const msg = errorJson?.error?.message || "Your message wasn't sent. Please try again.";
         callbacks.onError?.(msg, errorJson?.error?.code);
         return;
       }
@@ -806,8 +816,9 @@ class ApiService {
         }
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Chat connection failed.';
-      callbacks.onError?.(message);
+      callbacks.onError?.(
+        "We couldn't confirm whether your message was sent. Check the conversation before trying again."
+      );
     }
   }
 

@@ -338,12 +338,17 @@ async function runTests() {
       try {
         response = await mockStreamChat(opts);
       } catch (connErr) {
-        callbacks.onError('Connection to Solace was interrupted before your message could be sent. Please tap to try again.');
+        callbacks.onError("We couldn't confirm whether your message was sent. Check the conversation before trying again.");
         return;
       }
 
-      if (response.status === 502 || response.status === 503 || response.status === 504) {
-        callbacks.onError('Solace is gently waking up or temporarily unavailable. Your message was not sent. Please tap to send again.');
+      if (response.status === 504) {
+        callbacks.onError("We couldn't confirm whether your message was sent. Check the conversation before trying again.");
+        return;
+      }
+
+      if (response.status === 502 || response.status === 503) {
+        callbacks.onError("Your message wasn't sent. Please try again.");
         return;
       }
     } catch (err) {
@@ -353,15 +358,31 @@ async function runTests() {
 
   await testStreamChatHandler({ simulateConnErr: true });
   assert.strictEqual(postCount, 1, 'Stream POST must be attempted exactly ONCE on network drop.');
-  assert.ok(receivedError.includes('Please tap to try again'), 'Actionable manual retry message provided.');
-  console.log('✓ Stream chat sends exactly 1 POST on network failure; zero duplicate submissions.');
+  assert.strictEqual(
+    receivedError,
+    "We couldn't confirm whether your message was sent. Check the conversation before trying again.",
+    'Ambiguous network error must prompt conversation inspection.'
+  );
+  console.log('✓ Stream chat sends exactly 1 POST on network failure; surfaces ambiguous confirmation notice.');
 
-  // [8/11] 504 Gateway Timeout Does NOT Trigger Another POST
+  // [8/11] 504 Gateway Timeout Does NOT Trigger Another POST and Emits Ambiguous Notice
   console.log('\n[8/11] Testing 504 Gateway Timeout Does NOT Trigger Another POST...');
   await testStreamChatHandler({ simulateStatus: 504 });
   assert.strictEqual(postCount, 1, 'Stream POST must be attempted exactly ONCE on 504 gateway timeout.');
-  assert.ok(receivedError.includes('Your message was not sent'), 'Clear feedback confirming message was not sent.');
-  console.log('✓ 504 timeout does not trigger automatic retry.');
+  assert.strictEqual(
+    receivedError,
+    "We couldn't confirm whether your message was sent. Check the conversation before trying again.",
+    '504 timeout must prompt checking conversation before retry.'
+  );
+
+  // Confirmed 502 rejection emits distinct failure notice
+  await testStreamChatHandler({ simulateStatus: 502 });
+  assert.strictEqual(
+    receivedError,
+    "Your message wasn't sent. Please try again.",
+    'Confirmed 502 rejection must state message was not sent.'
+  );
+  console.log('✓ 504 timeout and 502 rejection emit distinct confirmed vs ambiguous messages without auto-retry.');
 
   // [9/11] Mid-Stream Network Failure Does Not Restart Conversation
   console.log('\n[9/11] Testing Mid-Stream Network Failure Does Not Restart Conversation...');
