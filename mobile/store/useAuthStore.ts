@@ -130,7 +130,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // 3. Listen to auth state transitions
       supabase.auth.onAuthStateChange(async (_event, newSession) => {
         if (newSession?.user) {
-          await ExpoSecureStoreAdapter.removeItem(GUEST_KEY);
+          try {
+            await ExpoSecureStoreAdapter.removeItem(GUEST_KEY);
+          } catch (storageErr) {
+            console.warn('[useAuthStore] Failed to clear guest key on auth state change:', storageErr);
+          }
           set({
             session: newSession,
             user: {

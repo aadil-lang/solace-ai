@@ -92,8 +92,23 @@ class ApiService {
     });
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private delay(ms: number, signal?: AbortSignal | null): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        return reject(signal.reason || new Error('Request aborted'));
+      }
+      const timeoutId = setTimeout(() => {
+        if (signal) signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timeoutId);
+        reject(signal?.reason || new Error('Request aborted'));
+      };
+      if (signal) {
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    });
   }
 
   private isColdStartOrTransient(err: unknown, response?: Response): boolean {
@@ -139,17 +154,44 @@ class ApiService {
         ? options.isIdempotent
         : (method === 'GET' || method === 'DELETE' || method === 'HEAD');
 
-    // Bounded retries: up to 2 retries (3 total attempts) for idempotent or safe read calls
-    const maxRetries = options.retries !== undefined ? options.retries : (isIdempotent ? 2 : 0);
-    const timeout = options.timeoutMs || this.timeoutMs;
+    // Render cold starts take ~45s. For idempotent operations, retry with bounded exponential backoff
+    // up to an overall window of ~50-60s. Non-idempotent mutations never retry automatically.
+    const MAX_RETRY_WINDOW_MS = 55000;
+    const maxRetries = options.retries !== undefined ? options.retries : (isIdempotent ? 5 : 0);
+    const configuredTimeout = options.timeoutMs || this.timeoutMs;
     const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
+    const startTime = Date.now();
     let lastError: unknown = null;
     let lastResponse: Response | null = null;
+    let hasNotifiedColdStart = false;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      if (options.signal?.aborted) {
+        throw options.signal.reason || new Error('Request aborted');
+      }
+
+      // Check if overall retry window has expired on subsequent attempts
+      const elapsedTotal = Date.now() - startTime;
+      if (attempt > 0 && elapsedTotal >= MAX_RETRY_WINDOW_MS) {
+        break;
+      }
+
+      // Bound per-attempt timeout by remaining overall window
+      const remainingWindow = Math.max(1000, MAX_RETRY_WINDOW_MS - elapsedTotal);
+      const attemptTimeout = isIdempotent
+        ? Math.min(configuredTimeout, remainingWindow)
+        : configuredTimeout;
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const timeoutId = setTimeout(() => controller.abort(), attemptTimeout);
+
+      // Link external signal to controller if provided
+      const externalSignal = options.signal;
+      const onExternalAbort = () => controller.abort();
+      if (externalSignal) {
+        externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+      }
 
       try {
         const authToken = await this.getAuthToken(tokenOverride);
@@ -170,38 +212,83 @@ class ApiService {
         });
 
         clearTimeout(timeoutId);
+        if (externalSignal) {
+          externalSignal.removeEventListener('abort', onExternalAbort);
+        }
 
         // Check if reverse proxy indicates upstream cold boot
         if (this.isColdStartOrTransient(null, response) && attempt < maxRetries) {
           lastResponse = response;
-          this.notifyColdStart(true, attempt + 1, maxRetries + 1);
-          await this.delay(1500 * (attempt + 1));
-          continue;
+          const currentElapsed = Date.now() - startTime;
+          if (currentElapsed < MAX_RETRY_WINDOW_MS) {
+            if (!hasNotifiedColdStart) {
+              this.notifyColdStart(true, attempt + 1, maxRetries + 1);
+              hasNotifiedColdStart = true;
+            }
+
+            // Bounded exponential backoff with jitter: 2s, 4s, 8s, 16s (max 16s) + 0-500ms jitter
+            const expDelay = Math.min(2000 * Math.pow(2, attempt), 16000);
+            const jitter = Math.floor(Math.random() * 500);
+            const delayMs = expDelay + jitter;
+
+            // Ensure sleep does not exceed overall window
+            const safeDelay = Math.min(delayMs, Math.max(100, MAX_RETRY_WINDOW_MS - currentElapsed));
+            await this.delay(safeDelay, externalSignal);
+            continue;
+          }
         }
 
         // Authoritative response received
-        if (attempt > 0) {
+        if (hasNotifiedColdStart) {
           this.notifyColdStart(false, attempt + 1, maxRetries + 1);
         }
         return response;
       } catch (err: unknown) {
         clearTimeout(timeoutId);
+        if (externalSignal) {
+          externalSignal.removeEventListener('abort', onExternalAbort);
+        }
         lastError = err;
 
-        if (this.isColdStartOrTransient(err) && attempt < maxRetries) {
-          this.notifyColdStart(true, attempt + 1, maxRetries + 1);
-          await this.delay(1500 * (attempt + 1));
-          continue;
+        // If externally aborted, rethrow immediately without retrying
+        if (externalSignal?.aborted) {
+          if (hasNotifiedColdStart) {
+            this.notifyColdStart(false, attempt + 1, maxRetries + 1);
+          }
+          throw externalSignal.reason || err;
         }
 
-        if (attempt > 0) {
+        const currentElapsed = Date.now() - startTime;
+        if (this.isColdStartOrTransient(err) && attempt < maxRetries && currentElapsed < MAX_RETRY_WINDOW_MS) {
+          if (!hasNotifiedColdStart) {
+            this.notifyColdStart(true, attempt + 1, maxRetries + 1);
+            hasNotifiedColdStart = true;
+          }
+
+          const expDelay = Math.min(2000 * Math.pow(2, attempt), 16000);
+          const jitter = Math.floor(Math.random() * 500);
+          const delayMs = expDelay + jitter;
+          const safeDelay = Math.min(delayMs, Math.max(100, MAX_RETRY_WINDOW_MS - currentElapsed));
+
+          try {
+            await this.delay(safeDelay, externalSignal);
+            continue;
+          } catch (delayErr) {
+            if (hasNotifiedColdStart) {
+              this.notifyColdStart(false, attempt + 1, maxRetries + 1);
+            }
+            throw delayErr;
+          }
+        }
+
+        if (hasNotifiedColdStart) {
           this.notifyColdStart(false, attempt + 1, maxRetries + 1);
         }
 
         if (err instanceof Error) {
           if (err.name === 'AbortError') {
             throw new Error(
-              `Solace is taking a moment to wake up (request to ${endpoint} timed out after ${timeout}ms). ` +
+              `Solace is taking a moment to wake up (request to ${endpoint} timed out after ${attemptTimeout}ms). ` +
               `Your local records remain safe.`
             );
           }
@@ -216,8 +303,12 @@ class ApiService {
       }
     }
 
+    if (hasNotifiedColdStart) {
+      this.notifyColdStart(false, maxRetries + 1, maxRetries + 1);
+    }
+
     if (lastResponse) return lastResponse;
-    throw lastError || new Error(`Request to ${endpoint} failed after ${maxRetries + 1} attempts.`);
+    throw lastError || new Error(`Request to ${endpoint} failed after ${maxRetries + 1} attempts within ${MAX_RETRY_WINDOW_MS}ms window.`);
   }
 
   // --- Health ---
@@ -655,6 +746,7 @@ class ApiService {
     }
 
     try {
+      // POST is executed exactly ONCE to prevent duplicate user messages or double turns on backend
       let response: Response;
       try {
         response = await fetch(url, {
@@ -662,25 +754,19 @@ class ApiService {
           headers,
           body: JSON.stringify({ content, session_id: sessionId, mode }),
         });
-        if (response.status === 502 || response.status === 503 || response.status === 504) {
-          this.notifyColdStart(true, 1, 2);
-          await this.delay(2000);
-          response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ content, session_id: sessionId, mode }),
-          });
-          this.notifyColdStart(false, 2, 2);
-        }
       } catch (connErr: unknown) {
-        this.notifyColdStart(true, 1, 2);
-        await this.delay(2000);
-        response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ content, session_id: sessionId, mode }),
-        });
-        this.notifyColdStart(false, 2, 2);
+        // Connection error or network drop before receiving response headers
+        callbacks.onError?.(
+          'Connection to Solace was interrupted before your message could be sent. Please tap to try again.'
+        );
+        return;
+      }
+
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
+        callbacks.onError?.(
+          'Solace is gently waking up or temporarily unavailable. Your message was not sent. Please tap to send again.'
+        );
+        return;
       }
 
       if (!response.ok) {

@@ -118,9 +118,10 @@ try {
   ExpoSpeech = {
     isAvailable: false,
     speak: (id, text, options) => {
-      console.warn('[ExponentSpeech] Native TTS module not compiled into this build. Speech synthesis bypassed.');
-      if (options && options.onDone) {
-        setTimeout(options.onDone, 100);
+      console.warn('[ExponentSpeech] Native TTS module not compiled into this build. Speech synthesis unavailable in preview.');
+      if (options && typeof options.onError === 'function') {
+        const err = new Error('[ExponentSpeech] Native speech synthesis is unavailable in this preview build.');
+        setTimeout(() => options.onError(err), 0);
       }
     },
     stop: async () => {},

@@ -210,7 +210,8 @@ class VoiceService {
       onStopped: () => {
         this.setState('idle');
       },
-      onError: () => {
+      onError: (err) => {
+        console.warn('[VoiceService] Speech playback failed or unavailable in this build:', err);
         this.setState('idle');
       },
     });
