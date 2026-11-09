@@ -185,7 +185,14 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
   };
 
   const handleCopyText = async (text: string, id: string) => {
-    await Clipboard.setStringAsync(text);
+    const success = await Clipboard.setStringAsync(text);
+    if (success === false) {
+      Alert.alert(
+        'Clipboard Notice',
+        'System clipboard copying is not available in this preview environment.'
+      );
+      return;
+    }
     setCopiedId(id);
     if (Platform.OS !== 'web') {
       try {

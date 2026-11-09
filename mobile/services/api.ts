@@ -35,10 +35,24 @@ export interface ChatStreamCallbacks {
   onError?: (error: string, code?: string) => void;
 }
 
+export interface ColdStartStatus {
+  isColdStarting: boolean;
+  message: string;
+  attempt: number;
+  maxAttempts: number;
+}
+
+export interface FetchOptions extends RequestInit {
+  timeoutMs?: number;
+  retries?: number;
+  isIdempotent?: boolean;
+}
+
 class ApiService {
   private baseUrl: string;
   private timeoutMs: number;
   private tokenProvider: (() => Promise<string | null>) | null = null;
+  private coldStartListeners: Set<(status: ColdStartStatus) => void> = new Set();
 
   constructor(baseUrl: string = API_CONFIG.baseUrl, timeoutMs: number = API_CONFIG.timeoutMs) {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
@@ -57,6 +71,51 @@ class ApiService {
     this.tokenProvider = provider;
   }
 
+  public subscribeColdStart(listener: (status: ColdStartStatus) => void): () => void {
+    this.coldStartListeners.add(listener);
+    return () => this.coldStartListeners.delete(listener);
+  }
+
+  private notifyColdStart(isColdStarting: boolean, attempt: number, maxAttempts: number): void {
+    const status: ColdStartStatus = {
+      isColdStarting,
+      message: isColdStarting
+        ? 'Solace is gently waking up. Please hold a moment...'
+        : '',
+      attempt,
+      maxAttempts,
+    };
+    this.coldStartListeners.forEach((fn) => {
+      try {
+        fn(status);
+      } catch {}
+    });
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private isColdStartOrTransient(err: unknown, response?: Response): boolean {
+    if (response) {
+      // HTTP 502, 503, 504 are standard reverse-proxy responses when upstream container is booting
+      return response.status === 502 || response.status === 503 || response.status === 504;
+    }
+    if (err instanceof Error) {
+      if (err.name === 'AbortError') return true;
+      const msg = err.message.toLowerCase();
+      if (
+        msg.includes('network request failed') ||
+        msg.includes('failed to fetch') ||
+        msg.includes('connection refused') ||
+        msg.includes('econnrefused')
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private async getAuthToken(override?: string | null): Promise<string | null> {
     if (override !== undefined) return override;
     if (this.tokenProvider) {
@@ -71,49 +130,94 @@ class ApiService {
 
   private async fetchWithTimeout(
     endpoint: string,
-    options: RequestInit = {},
+    options: FetchOptions = {},
     tokenOverride?: string | null
   ): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    const method = (options.method || 'GET').toUpperCase();
+    const isIdempotent =
+      options.isIdempotent !== undefined
+        ? options.isIdempotent
+        : (method === 'GET' || method === 'DELETE' || method === 'HEAD');
 
+    // Bounded retries: up to 2 retries (3 total attempts) for idempotent or safe read calls
+    const maxRetries = options.retries !== undefined ? options.retries : (isIdempotent ? 2 : 0);
+    const timeout = options.timeoutMs || this.timeoutMs;
     const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const authToken = await this.getAuthToken(tokenOverride);
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...((options.headers as Record<string, string>) || {}),
-    };
+    let lastError: unknown = null;
+    let lastResponse: Response | null = null;
 
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
-    }
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        headers,
-      });
-      return response;
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          throw new Error(`Request to ${url} timed out after ${this.timeoutMs}ms.`);
+      try {
+        const authToken = await this.getAuthToken(tokenOverride);
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...((options.headers as Record<string, string>) || {}),
+        };
+
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`;
         }
-        if (err.message.includes('Network request failed')) {
-          throw new Error(
-            `Cannot connect to ${this.baseUrl}. ` +
-            `If using Android emulator, use 'http://10.0.2.2:8000'. ` +
-            `If using a physical device, use your machine's LAN IP.`
-          );
+
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+          headers,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Check if reverse proxy indicates upstream cold boot
+        if (this.isColdStartOrTransient(null, response) && attempt < maxRetries) {
+          lastResponse = response;
+          this.notifyColdStart(true, attempt + 1, maxRetries + 1);
+          await this.delay(1500 * (attempt + 1));
+          continue;
         }
+
+        // Authoritative response received
+        if (attempt > 0) {
+          this.notifyColdStart(false, attempt + 1, maxRetries + 1);
+        }
+        return response;
+      } catch (err: unknown) {
+        clearTimeout(timeoutId);
+        lastError = err;
+
+        if (this.isColdStartOrTransient(err) && attempt < maxRetries) {
+          this.notifyColdStart(true, attempt + 1, maxRetries + 1);
+          await this.delay(1500 * (attempt + 1));
+          continue;
+        }
+
+        if (attempt > 0) {
+          this.notifyColdStart(false, attempt + 1, maxRetries + 1);
+        }
+
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            throw new Error(
+              `Solace is taking a moment to wake up (request to ${endpoint} timed out after ${timeout}ms). ` +
+              `Your local records remain safe.`
+            );
+          }
+          if (err.message.includes('Network request failed') || err.message.includes('Failed to fetch')) {
+            throw new Error(
+              `Cannot connect to Solace backend at ${this.baseUrl}. ` +
+              `The server may be warming up or offline. Your thoughts remain safely preserved on your device.`
+            );
+          }
+        }
+        throw err;
       }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
     }
+
+    if (lastResponse) return lastResponse;
+    throw lastError || new Error(`Request to ${endpoint} failed after ${maxRetries + 1} attempts.`);
   }
 
   // --- Health ---
@@ -551,11 +655,33 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ content, session_id: sessionId, mode }),
-      });
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ content, session_id: sessionId, mode }),
+        });
+        if (response.status === 502 || response.status === 503 || response.status === 504) {
+          this.notifyColdStart(true, 1, 2);
+          await this.delay(2000);
+          response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ content, session_id: sessionId, mode }),
+          });
+          this.notifyColdStart(false, 2, 2);
+        }
+      } catch (connErr: unknown) {
+        this.notifyColdStart(true, 1, 2);
+        await this.delay(2000);
+        response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ content, session_id: sessionId, mode }),
+        });
+        this.notifyColdStart(false, 2, 2);
+      }
 
       if (!response.ok) {
         const errorJson = await response.json().catch(() => ({}));

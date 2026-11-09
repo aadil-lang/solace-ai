@@ -33,11 +33,12 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "postinstall": "node scripts/apply_native_shims.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "node tests/auth_and_profile.test.js && node tests/phase3_companion.test.js && node tests/poetry.test.js && node tests/journal.test.js && node tests/emotional_landscape.test.js",
+    "test": "node tests/auth_and_profile.test.js && node tests/phase3_companion.test.js && node tests/poetry.test.js && node tests/journal.test.js && node tests/emotional_landscape.test.js && node tests/storage_adapter.test.js && node tests/api_cold_start.test.js",
     "check-types": "tsc --noEmit",
     "build:apk": "eas build -p android --profile preview"
   },

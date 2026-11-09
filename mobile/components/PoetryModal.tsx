@@ -115,7 +115,14 @@ export const PoetryModal: React.FC<PoetryModalProps> = ({ visible, onClose }) =>
   };
 
   const handleCopy = async (textToCopy: string) => {
-    await Clipboard.setStringAsync(textToCopy);
+    const success = await Clipboard.setStringAsync(textToCopy);
+    if (success === false) {
+      Alert.alert(
+        'Clipboard Notice',
+        'System clipboard copying is not available in this preview environment.'
+      );
+      return;
+    }
     if (Platform.OS !== 'web') {
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

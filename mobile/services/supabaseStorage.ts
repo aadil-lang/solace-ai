@@ -2,7 +2,15 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 /**
- * Cross-platform storage adapter for Supabase Auth.
+ * Android Keystore and SecureStore require keys to contain only
+ * alphanumeric characters, '.', '-', and '_'.
+ * Keys starting with '@' or containing slashes/special characters are sanitized on Native.
+ * On Web, raw keys are preserved in localStorage.
+ */
+export const sanitizeKey = (key: string): string => key.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+/**
+ * Cross-platform storage adapter for Supabase Auth and offline guest persistence.
  * Uses Expo SecureStore on Native (iOS/Android) and localStorage on Web.
  */
 export const ExpoSecureStoreAdapter = {
@@ -14,7 +22,7 @@ export const ExpoSecureStoreAdapter = {
         }
         return null;
       }
-      return await SecureStore.getItemAsync(key);
+      return await SecureStore.getItemAsync(sanitizeKey(key));
     } catch (error) {
       console.warn(`[SecureStoreAdapter] Failed to get key "${key}":`, error);
       return null;
@@ -29,9 +37,10 @@ export const ExpoSecureStoreAdapter = {
         }
         return;
       }
-      await SecureStore.setItemAsync(key, value);
+      await SecureStore.setItemAsync(sanitizeKey(key), value);
     } catch (error) {
       console.warn(`[SecureStoreAdapter] Failed to set key "${key}":`, error);
+      throw error;
     }
   },
 
@@ -43,10 +52,10 @@ export const ExpoSecureStoreAdapter = {
         }
         return;
       }
-      await SecureStore.deleteItemAsync(key);
+      await SecureStore.deleteItemAsync(sanitizeKey(key));
     } catch (error) {
       console.warn(`[SecureStoreAdapter] Failed to delete key "${key}":`, error);
+      throw error;
     }
   },
 };
-
