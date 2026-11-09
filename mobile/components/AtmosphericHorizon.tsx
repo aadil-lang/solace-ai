@@ -28,19 +28,19 @@ export const AtmosphericHorizon: React.FC<Props> = ({
 }) => {
   const confirmDelete = (item: CheckIn) => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to remove this moment from your journey?')) {
+      if (window.confirm('Are you sure you want to delete this check-in? This action cannot be undone.')) {
         onDelete(item.id);
       }
       return;
     }
 
     Alert.alert(
-      'Remove Moment',
-      'Are you sure you want to remove this moment from your reflection history? This action cannot be undone.',
+      'Delete Check-in',
+      'Are you sure you want to delete this check-in? This action cannot be undone.',
       [
-        { text: 'Keep', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => onDelete(item.id),
         },

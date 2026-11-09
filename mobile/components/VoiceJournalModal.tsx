@@ -163,11 +163,22 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
   };
 
   const handleDiscardDraft = () => {
+    const hasContent = Boolean(
+      activeDraft &&
+        (activeDraft.transcript?.trim().length > 0 ||
+          activeDraft.title?.trim().length > 0)
+    );
+
+    if (!hasContent) {
+      clearDraft();
+      return;
+    }
+
     Alert.alert(
       'Discard Journal Draft?',
-      'Are you sure you want to discard this spoken draft? This action cannot be undone.',
+      'Are you sure you want to discard your unsaved reflection? This unsaved draft will be permanently lost.',
       [
-        { text: 'Keep Draft', style: 'cancel' },
+        { text: 'Keep Editing', style: 'cancel' },
         {
           text: 'Discard',
           style: 'destructive',
@@ -728,7 +739,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   closeBtn: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: '#EFEAE2',
   },
   headerTitle: {
     fontSize: 22,

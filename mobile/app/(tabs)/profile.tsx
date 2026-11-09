@@ -68,6 +68,9 @@ export default function ProfileScreen() {
   const [newMemoryCategory, setNewMemoryCategory] = useState<MemoryCategory>('preferences');
   const [isCreatingMemory, setIsCreatingMemory] = useState(false);
 
+  // Collapsible technical diagnostics state
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
   useEffect(() => {
     fetchMemories();
   }, [fetchMemories]);
@@ -380,20 +383,51 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        {/* System Telemetry & Backend Health (Preserving Phase 1) */}
+        {/* System Health & Optional Technical Diagnostics */}
         <Card style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardSectionTitle}>Backend Telemetry</Text>
+            <View style={styles.healthTitleRow}>
+              <Ionicons
+                name="pulse-outline"
+                size={18}
+                color={connectionStatus === 'connected' ? theme.colors.forest : theme.colors.textSecondary}
+              />
+              <Text style={styles.cardSectionTitle}>System Health</Text>
+            </View>
             <ConnectionBadge status={connectionStatus} />
           </View>
-          <Text style={styles.telemetryUrl}>Endpoint: {apiUrl}</Text>
-          <Button
-            title="Test Backend Connection"
-            variant="outline"
-            size="sm"
-            onPress={checkBackendHealth}
-            style={styles.testBtn}
-          />
+
+          <TouchableOpacity
+            style={styles.diagnosticsToggle}
+            onPress={() => setShowDiagnostics(!showDiagnostics)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={showDiagnostics ? 'Hide technical diagnostics' : 'Show technical diagnostics'}
+          >
+            <Text style={styles.diagnosticsToggleText}>
+              {showDiagnostics ? 'Hide Technical Diagnostics' : 'Developer Diagnostics'}
+            </Text>
+            <Ionicons
+              name={showDiagnostics ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color={theme.colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {showDiagnostics && (
+            <View style={styles.diagnosticsContainer}>
+              <Text style={styles.telemetryUrl} numberOfLines={1} ellipsizeMode="middle">
+                Endpoint: {apiUrl}
+              </Text>
+              <Button
+                title="Test Backend Connection"
+                variant="outline"
+                size="sm"
+                onPress={checkBackendHealth}
+                style={styles.testBtn}
+              />
+            </View>
+          )}
         </Card>
 
         {/* Sign Out Action */}
@@ -702,6 +736,29 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.xs,
     fontWeight: theme.typography.weights.medium,
     color: theme.colors.forest,
+  },
+  healthTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  diagnosticsToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  diagnosticsToggleText: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    fontWeight: theme.typography.weights.medium,
+  },
+  diagnosticsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surfaceMuted,
   },
   telemetryUrl: {
     fontSize: 11,

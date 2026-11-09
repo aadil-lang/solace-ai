@@ -119,6 +119,21 @@ export const EmotionalLandscapeModal: React.FC<Props> = ({ visible, onClose }) =
     setTimeout(() => setCopiedReflection(false), 2000);
   };
 
+  const handleDeleteSavedReflection = (id: string) => {
+    Alert.alert(
+      'Delete Reflection',
+      'Are you sure you want to remove this saved reflection from your sanctuary? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteSavedReflection(id),
+        },
+      ]
+    );
+  };
+
   const dominantMeta = summary.dominant_season
     ? MOOD_METADATA[summary.dominant_season]
     : null;
@@ -128,21 +143,24 @@ export const EmotionalLandscapeModal: React.FC<Props> = ({ visible, onClose }) =
       <SafeAreaView style={styles.safeArea}>
         {/* Top Navigation Bar */}
         <View style={styles.topBar}>
+          <View style={styles.headerTitleContainer}>
+            <View style={styles.headerIconBadge}>
+              <Ionicons name="compass" size={16} color={theme.colors.forest} />
+            </View>
+            <View>
+              <Text style={styles.topBarTitle}>Emotional Landscape</Text>
+              <Text style={styles.topBarSubtitle}>Notice your journey, one moment at a time</Text>
+            </View>
+          </View>
+
           <TouchableOpacity
-            style={styles.closeBtn}
+            style={styles.closeButton}
             onPress={onClose}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityLabel="Close Emotional Landscape"
           >
-            <Ionicons name="close" size={24} color={theme.colors.text} />
+            <Ionicons name="close" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-
-          <View style={styles.topBarCenter}>
-            <Text style={styles.topBarTitle}>Emotional Landscape</Text>
-            <Text style={styles.topBarSubtitle}>Notice your journey, one moment at a time</Text>
-          </View>
-
-          <View style={styles.topBarRight} />
         </View>
 
         {/* Tab Selector */}
@@ -412,8 +430,9 @@ export const EmotionalLandscapeModal: React.FC<Props> = ({ visible, onClose }) =
                             {r.timeframe === '7d' ? '7-Day Reflection' : r.timeframe === '30d' ? '30-Day Reflection' : 'Reflection'}
                           </Text>
                           <TouchableOpacity
-                            onPress={() => deleteSavedReflection(r.id)}
+                            onPress={() => handleDeleteSavedReflection(r.id)}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="Delete saved reflection"
                           >
                             <Ionicons name="trash-outline" size={14} color={theme.colors.textMuted} />
                           </TouchableOpacity>
@@ -460,35 +479,42 @@ const styles = StyleSheet.create({
   },
   topBar: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#EDE8E0',
+    backgroundColor: '#FAF8F5',
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  headerIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E8F1EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topBarCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
   topBarTitle: {
-    fontSize: 16,
-    fontWeight: theme.typography.weights.semibold,
+    fontSize: 18,
+    fontWeight: theme.typography.weights.bold,
     color: theme.colors.text,
   },
   topBarSubtitle: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginTop: 2,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
   },
-  topBarRight: {
-    width: 32,
+  closeButton: {
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: '#EFEAE2',
   },
   tabBar: {
     flexDirection: 'row',

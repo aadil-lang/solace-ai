@@ -254,22 +254,40 @@ export default function HomeScreen() {
               />
 
               <View style={styles.saveActionRow}>
-                <Button
-                  title={checkInSaved ? '✓ Saved for Today' : 'Save Check-in'}
-                  onPress={handleSaveCheckIn}
-                  loading={isSubmitting}
-                  disabled={checkInSaved}
-                  variant={checkInSaved ? 'outline' : 'primary'}
-                  style={checkInSaved ? styles.savedCheckInBtn : styles.saveCheckInBtn}
-                  textStyle={checkInSaved ? { color: theme.colors.forest } : undefined}
-                />
-                {checkInSaved && (
+                {checkInSaved ? (
                   <TouchableOpacity
-                    onPress={() => setCheckInSaved(false)}
-                    style={styles.reEditLink}
+                    style={styles.savedStatusButton}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') {
+                        try {
+                          Haptics.selectionAsync();
+                        } catch {}
+                      }
+                      setCheckInSaved(false);
+                    }}
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityLabel="Check-in saved for today. Tap to update your entry."
+                    accessibilityHint="Opens the check-in form to edit mood, intensity, or note"
                   >
-                    <Text style={styles.reEditText}>Update</Text>
+                    <View style={styles.savedStatusLeft}>
+                      <Ionicons name="checkmark-circle" size={18} color={theme.colors.forest} />
+                      <Text style={styles.savedStatusTitle}>Saved for Today</Text>
+                    </View>
+                    <View style={styles.savedStatusRight}>
+                      <Text style={styles.savedStatusAction}>Tap to update</Text>
+                      <Ionicons name="create-outline" size={15} color={theme.colors.forest} />
+                    </View>
                   </TouchableOpacity>
+                ) : (
+                  <Button
+                    title="Save Check-in"
+                    onPress={handleSaveCheckIn}
+                    loading={isSubmitting}
+                    disabled={isSubmitting}
+                    variant="primary"
+                    style={styles.saveCheckInBtn}
+                  />
                 )}
               </View>
             </View>
@@ -589,19 +607,37 @@ const styles = StyleSheet.create({
   saveCheckInBtn: {
     flex: 1,
   },
-  savedCheckInBtn: {
+  savedStatusButton: {
     flex: 1,
-    borderColor: theme.colors.forest,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#E8F1EB',
+    borderColor: theme.colors.forest,
+    borderWidth: 1.5,
+    borderRadius: theme.radius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
-  reEditLink: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
+  savedStatusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  reEditText: {
-    fontSize: theme.typography.sizes.xs,
+  savedStatusTitle: {
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.semibold,
     color: theme.colors.forest,
+  },
+  savedStatusRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  savedStatusAction: {
+    fontSize: theme.typography.sizes.xs,
     fontWeight: theme.typography.weights.medium,
+    color: theme.colors.forest,
   },
   companionCard: {
     backgroundColor: theme.colors.surface,
