@@ -35,6 +35,9 @@ export const API_CONFIG = {
     poetryGenerate: '/api/v1/poetry/generate',
     poetrySave: '/api/v1/poetry/save',
     poetrySaved: '/api/v1/poetry/saved',
+    journalReflect: '/api/v1/journal/reflect',
+    journalSave: '/api/v1/journal/save',
+    journalEntries: '/api/v1/journal/entries',
   },
 } as const;
 

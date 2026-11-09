@@ -17,6 +17,11 @@ import {
   SavedPoemCreate,
   SavedPoem,
   SavedPoemListResponse,
+  JournalEntry,
+  JournalCreateInput,
+  JournalUpdateInput,
+  JournalReflectionResponse,
+  JournalListResponse,
 } from '@/types';
 
 export interface ChatStreamCallbacks {
@@ -321,6 +326,104 @@ class ApiService {
     const response = await this.fetchWithTimeout(endpoint, { method: 'DELETE' }, tokenOverride);
     if (!response.ok) {
       throw new Error(`Failed to delete poem (${response.status})`);
+    }
+  }
+
+  // --- Voice Journal ---
+  public async reflectOnJournal(
+    transcript: string,
+    tokenOverride?: string | null
+  ): Promise<JournalReflectionResponse> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.journalReflect,
+      {
+        method: 'POST',
+        body: JSON.stringify({ transcript }),
+      },
+      tokenOverride
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to generate reflection (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async saveJournalEntry(
+    data: JournalCreateInput,
+    tokenOverride?: string | null
+  ): Promise<JournalEntry> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.journalSave,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      tokenOverride
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to save journal entry (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async getJournalEntries(
+    limit: number = 50,
+    offset: number = 0,
+    tokenOverride?: string | null
+  ): Promise<JournalListResponse> {
+    const endpoint = `${API_CONFIG.endpoints.journalEntries}?limit=${limit}&offset=${offset}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, tokenOverride);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to fetch journal entries (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async getJournalEntry(
+    journalId: string,
+    tokenOverride?: string | null
+  ): Promise<JournalEntry> {
+    const endpoint = `${API_CONFIG.endpoints.journalEntries}/${journalId}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, tokenOverride);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to fetch journal entry (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async updateJournalEntry(
+    journalId: string,
+    data: JournalUpdateInput,
+    tokenOverride?: string | null
+  ): Promise<JournalEntry> {
+    const endpoint = `${API_CONFIG.endpoints.journalEntries}/${journalId}`;
+    const response = await this.fetchWithTimeout(
+      endpoint,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      tokenOverride
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to update journal entry (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async deleteJournalEntry(
+    journalId: string,
+    tokenOverride?: string | null
+  ): Promise<void> {
+    const endpoint = `${API_CONFIG.endpoints.journalEntries}/${journalId}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'DELETE' }, tokenOverride);
+    if (!response.ok) {
+      throw new Error(`Failed to delete journal entry (${response.status})`);
     }
   }
 

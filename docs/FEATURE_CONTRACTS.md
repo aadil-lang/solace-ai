@@ -312,7 +312,8 @@ CREATE POLICY "Users can manage own saved poems" ON public.words_of_solace
     FOR ALL USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
 
--- 2. Voice Journals (Private Audio/Text Journals - Transcripts only, no raw audio)
+-- Migration 00005: Voice Journals (Private Audio Journaling)
+-- Table: public.voice_journals
 CREATE TABLE IF NOT EXISTS public.voice_journals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -321,16 +322,19 @@ CREATE TABLE IF NOT EXISTS public.voice_journals (
     mood_tag TEXT,
     duration_seconds INT DEFAULT 0,
     reflection TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_voice_journals_user_id ON public.voice_journals(user_id);
+CREATE INDEX IF NOT EXISTS idx_voice_journals_user_created ON public.voice_journals(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_voice_journals_created_at ON public.voice_journals(created_at DESC);
 ALTER TABLE public.voice_journals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage own journals" ON public.voice_journals
-    FOR ALL USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own journals" ON public.voice_journals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own journals" ON public.voice_journals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own journals" ON public.voice_journals FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own journals" ON public.voice_journals FOR DELETE USING (auth.uid() = user_id);
 
 CREATE TRIGGER set_voice_journals_updated_at
     BEFORE UPDATE ON public.voice_journals

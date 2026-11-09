@@ -121,16 +121,26 @@ Each feature service is encapsulated within `backend/app/services/<feature>_serv
                          |
                [Base64 in Memory]
                          |
-[Mobile] --- POST /voice/transcribe ---> [FastAPI /voice/transcribe]
+[Mobile] --- POST /api/v1/voice/transcribe ---> [FastAPI /voice/transcribe]
                                                   |
                                       [Gemini Multimodal Speech-to-Text]
                                                   |
-                                      [Zero-Disk Audio Buffer Delete]
+                                      [Immediate In-Memory Buffer Deletion]
                                                   |
 [Mobile UI] <--- JSON { text } <------------------+
      |
-[User Reviews/Edits Transcript]
+[Mandatory User Review & Editing] (Zero Auto-Save)
      |
-[User Taps Save] ---> POST /journals ---> [Supabase public.voice_journals (RLS)]
+     +---> [Optional User Tap: "Reflect on this entry"] ---> POST /api/v1/journal/reflect
+     |                                                         |
+     |                                             [Deterministic Crisis Filter]
+     |                                                         |
+     |                                             [Gemini Grounded Mirror Reflection]
+     |
+[Explicit User Tap: "Save Journal Entry"]
+     |
+     +--- (Authenticated) ---> POST /api/v1/journal/save ---> [Supabase public.voice_journals (RLS)]
+     |
+     +--- (Guest Mode)      ---> [Local Partitioned Keystore] (Index + 1.5KB Chunks, No Supabase rows)
 ```
 

@@ -37,7 +37,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "node tests/auth_and_profile.test.js && node tests/phase3_companion.test.js && node tests/poetry.test.js",
+    "test": "node tests/auth_and_profile.test.js && node tests/phase3_companion.test.js && node tests/poetry.test.js && node tests/journal.test.js",
     "check-types": "tsc --noEmit",
     "build:apk": "eas build -p android --profile preview"
   },

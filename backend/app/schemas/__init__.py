@@ -26,6 +26,14 @@ from app.schemas.poetry import (
     SavedPoemResponse,
     SavedPoemListResponse,
 )
+from app.schemas.journal import (
+    JournalCreateRequest,
+    JournalUpdateRequest,
+    JournalResponse,
+    JournalListResponse,
+    JournalReflectionRequest,
+    JournalReflectionResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -54,4 +62,10 @@ __all__ = [
     "SavedPoemCreate",
     "SavedPoemResponse",
     "SavedPoemListResponse",
+    "JournalCreateRequest",
+    "JournalUpdateRequest",
+    "JournalResponse",
+    "JournalListResponse",
+    "JournalReflectionRequest",
+    "JournalReflectionResponse",
 ]

@@ -17,6 +17,7 @@ import { Button } from '@/components/Button';
 import { WellnessActivity } from '@/types';
 import { BoxBreathingVisualizer } from '@/components/BoxBreathingVisualizer';
 import { PoetryModal } from '@/components/PoetryModal';
+import { VoiceJournalModal } from '@/components/VoiceJournalModal';
 
 const ACTIVITIES: WellnessActivity[] = [
   {
@@ -76,6 +77,7 @@ export default function DiscoverScreen() {
   const [activeActivity, setActiveActivity] = useState<WellnessActivity | null>(null);
   const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(false);
   const [isPoetryModalOpen, setIsPoetryModalOpen] = useState<boolean>(false);
+  const [isJournalModalOpen, setIsJournalModalOpen] = useState<boolean>(false);
 
   const filtered = filter === 'all'
     ? ACTIVITIES
@@ -121,6 +123,27 @@ export default function DiscoverScreen() {
           </View>
           <View style={styles.wosIconCircle}>
             <Ionicons name="book-outline" size={24} color="#B5835A" />
+          </View>
+        </TouchableOpacity>
+
+        {/* Voice Journal — Private Audio Sanctuary */}
+        <TouchableOpacity
+          style={styles.voiceJournalBanner}
+          onPress={() => setIsJournalModalOpen(true)}
+          activeOpacity={0.88}
+        >
+          <View style={styles.wosBannerLeft}>
+            <View style={styles.journalBadgeRow}>
+              <Ionicons name="mic-outline" size={13} color={theme.colors.forest} />
+              <Text style={styles.journalBadgeText}>VOICE JOURNAL</Text>
+            </View>
+            <Text style={styles.wosBannerTitle}>Private Audio Sanctuary</Text>
+            <Text style={styles.wosBannerSubtitle}>
+              Some thoughts are easier to speak than write. This is your space to let them out.
+            </Text>
+          </View>
+          <View style={styles.journalIconCircle}>
+            <Ionicons name="mic" size={24} color={theme.colors.forest} />
           </View>
         </TouchableOpacity>
 
@@ -251,6 +274,12 @@ export default function DiscoverScreen() {
       <PoetryModal
         visible={isPoetryModalOpen}
         onClose={() => setIsPoetryModalOpen(false)}
+      />
+
+      {/* Voice Journal Private Sanctuary Modal */}
+      <VoiceJournalModal
+        visible={isJournalModalOpen}
+        onClose={() => setIsJournalModalOpen(false)}
       />
     </SafeAreaView>
   );
@@ -472,6 +501,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#EFE0D0',
+  },
+  voiceJournalBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F2F7F4',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#D4E5DB',
+    elevation: 2,
+    shadowColor: theme.colors.forest,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  journalBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  journalBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: theme.colors.forest,
+    letterSpacing: 0.8,
+  },
+  journalIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D4E5DB',
   },
 });
 

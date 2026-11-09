@@ -157,3 +157,4 @@ export interface WellnessActivity {
 }
 
 export * from './poetry';
+export * from './journal';

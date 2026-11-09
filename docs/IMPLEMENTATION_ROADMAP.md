@@ -75,17 +75,22 @@ gantt
 
 ---
 
-### Phase 3: Voice Journal (Private Audio Journaling)
-- **Goal**: Private audio recording, preview, transcription, editing, and grounded reflection.
+### Phase 3: Voice Journal (Private Audio Journaling) [COMPLETED]
+- **Goal**: Private audio recording, preview, transcription, mandatory editing, and grounded reflection.
 - **Backend Tasks**:
-  - Implement `backend/app/schemas/journal.py`.
-  - Implement `backend/app/repositories/journal_repository.py`.
-  - Add `backend/app/api/journal.py` (`POST /journals`, `GET /journals`, `DELETE /journals/{id}`, `POST /journals/reflect`).
-  - Enforce zero raw audio retention; delete Python buffers immediately.
+  - Implemented `backend/app/schemas/journal.py`.
+  - Implemented `backend/app/repositories/journal_repository.py` (Supabase + local fallback, strict user isolation).
+  - Implemented `backend/app/services/journal_service.py` (grounded reflection + deterministic crisis screening).
+  - Registered `backend/app/api/journal.py` (`POST /journal/save`, `GET/PATCH/DELETE /journal/entries`, `POST /journal/reflect`).
+  - Enforced zero raw audio retention; in-memory audio buffers deleted immediately.
+  - Verified 5/5 backend test suites in `backend/tests/test_journal.py`.
 - **Mobile Tasks**:
-  - Create `mobile/store/useJournalStore.ts`.
-  - Build `mobile/app/journal.tsx` (or modal entry from Discover/Home) with audio recording controls, pause/resume, transcription trigger, transcript editor, and optional AI reflection.
-- **Gate**: Audio permission denial handled gracefully; interrupted recordings cleaned up; transcripts strictly private under RLS.
+  - Created `mobile/types/journal.ts` and `mobile/services/journal.ts`.
+  - Implemented `mobile/store/useJournalStore.ts` with indexed per-entry chunking avoiding Android SecureStore 2KB limits.
+  - Built `mobile/components/VoiceJournalModal.tsx` with recording controls, timer, mandatory transcript review, mood tags, optional AI reflection, and full collection management.
+  - Integrated Voice Journal entry point into `mobile/app/(tabs)/discover.tsx`.
+  - Verified 8/8 mobile test suites in `mobile/tests/journal.test.js`.
+- **Gate**: Audio permission denial handled gracefully; zero raw audio stored; transcripts strictly user-reviewed before saving; guest entries persisted locally across restarts without writing unauthenticated rows to Supabase; regression suites green.
 
 ---
 
