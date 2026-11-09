@@ -79,6 +79,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const trimmed = content.trim();
     if (!trimmed || get().isStreaming) return;
 
+    // Demonstrably local validation failure occurring before network dispatch
+    if (trimmed.length > 2000) {
+      set({
+        error: "Your message wasn't sent. Message exceeds 2,000 characters. Please shorten your message and try again.",
+        lastFailedMessage: trimmed,
+      });
+      return;
+    }
+
     const mode = modeOverride || (get().isRantMode ? 'rant' : 'standard');
     const { activeSessionId, messages, lastFailedMessage } = get();
     const tempUserId = useAuthStore.getState().user?.id || 'user';

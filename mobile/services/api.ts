@@ -763,18 +763,11 @@ class ApiService {
         return;
       }
 
-      // 504 Gateway Timeout: edge proxy timed out waiting for backend (ambiguous whether processed)
-      if (response.status === 504) {
+      // Treat HTTP 502, 503, and 504 as ambiguous by default: edge proxy or gateway errors
+      // where the backend might have processed lines 49-57 before connection dropped.
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
         callbacks.onError?.(
           "We couldn't confirm whether your message was sent. Check the conversation before trying again."
-        );
-        return;
-      }
-
-      // 502/503: Upstream container boot / reverse proxy rejection before backend processing (confirmed not sent)
-      if (response.status === 502 || response.status === 503) {
-        callbacks.onError?.(
-          "Your message wasn't sent. Please try again."
         );
         return;
       }
