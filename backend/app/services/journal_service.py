@@ -71,3 +71,4 @@ class JournalService:
 
 
 journal_service = JournalService()
+

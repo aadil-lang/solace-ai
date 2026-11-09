@@ -153,6 +153,12 @@ class VoiceService {
       console.warn('Voice transcription failed:', err);
       throw err;
     } finally {
+      if (this.recording) {
+        try {
+          await this.recording.stopAndUnloadAsync();
+        } catch {}
+        this.recording = null;
+      }
       // Audio mode reset
       Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -161,7 +167,7 @@ class VoiceService {
   }
 
   /**
-   * Cancel recording without transcribing
+   * Cancel recording without transcribing and clean up audio subsystem
    */
   public async cancelRecording(): Promise<void> {
     if (this.recording) {
@@ -171,6 +177,9 @@ class VoiceService {
       this.recording = null;
     }
     this.setState('idle');
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+    }).catch(() => {});
   }
 
   /**

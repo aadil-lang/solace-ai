@@ -114,62 +114,67 @@ async def test_reflection_generation_and_crisis_safety():
 
 async def test_journal_crud_and_user_isolation():
     """Verify repository CRUD, update, delete, and strict cross-user isolation."""
-    user_a = get_test_user_id()
-    user_b = "00000000-0000-0000-0000-000000000002"
+    orig_client = journal_repository._get_client
+    journal_repository._get_client = lambda: None
+    try:
+        user_a = get_test_user_id()
+        user_b = "00000000-0000-0000-0000-000000000002"
 
-    # 1. Save journal entry for User A
-    create_req = JournalCreateRequest(
-        title="Quiet Evening Thoughts",
-        transcript="Taking a slow breath after a long day of meetings. Feeling centered again.",
-        mood_tag="peaceful",
-        duration_seconds=45,
-        reflection="A lovely reminder to ground yourself in the present moment.",
-    )
-    saved_entry = await journal_repository.save_journal(user_id=user_a, data=create_req)
-    assert saved_entry.id is not None
-    assert saved_entry.user_id == user_a
-    assert saved_entry.title == "Quiet Evening Thoughts"
-    assert saved_entry.duration_seconds == 45
+        # 1. Save journal entry for User A
+        create_req = JournalCreateRequest(
+            title="Quiet Evening Thoughts",
+            transcript="Taking a slow breath after a long day of meetings. Feeling centered again.",
+            mood_tag="peaceful",
+            duration_seconds=45,
+            reflection="A lovely reminder to ground yourself in the present moment.",
+        )
+        saved_entry = await journal_repository.save_journal(user_id=user_a, data=create_req)
+        assert saved_entry.id is not None
+        assert saved_entry.user_id == user_a
+        assert saved_entry.title == "Quiet Evening Thoughts"
+        assert saved_entry.duration_seconds == 45
 
-    # 2. Retrieve entry by ID
-    fetched = await journal_repository.get_journal_by_id(user_id=user_a, journal_id=saved_entry.id)
-    assert fetched is not None
-    assert fetched.id == saved_entry.id
+        # 2. Retrieve entry by ID
+        fetched = await journal_repository.get_journal_by_id(user_id=user_a, journal_id=saved_entry.id)
+        assert fetched is not None
+        assert fetched.id == saved_entry.id
 
-    # 3. Retrieve user list
-    items, total = await journal_repository.get_journals(user_id=user_a, limit=10)
-    assert total >= 1
-    assert any(i.id == saved_entry.id for i in items)
+        # 3. Retrieve user list
+        items, total = await journal_repository.get_journals(user_id=user_a, limit=10)
+        assert total >= 1
+        assert any(i.id == saved_entry.id for i in items)
 
-    # 4. Update entry
-    update_req = JournalUpdateRequest(title="Updated Evening Reflection", mood_tag="reflective")
-    updated = await journal_repository.update_journal(
-        user_id=user_a, journal_id=saved_entry.id, data=update_req
-    )
-    assert updated is not None
-    assert updated.title == "Updated Evening Reflection"
-    assert updated.mood_tag == "reflective"
+        # 4. Update entry
+        update_req = JournalUpdateRequest(title="Updated Evening Reflection", mood_tag="reflective")
+        updated = await journal_repository.update_journal(
+            user_id=user_a, journal_id=saved_entry.id, data=update_req
+        )
+        assert updated is not None
+        assert updated.title == "Updated Evening Reflection"
+        assert updated.mood_tag == "reflective"
 
-    # 5. User isolation: User B cannot fetch, update, or delete User A's entry
-    unauth_fetched = await journal_repository.get_journal_by_id(user_id=user_b, journal_id=saved_entry.id)
-    assert unauth_fetched is None, "Security violation: User B fetched User A's journal"
+        # 5. User isolation: User B cannot fetch, update, or delete User A's entry
+        unauth_fetched = await journal_repository.get_journal_by_id(user_id=user_b, journal_id=saved_entry.id)
+        assert unauth_fetched is None, "Security violation: User B fetched User A's journal"
 
-    unauth_updated = await journal_repository.update_journal(
-        user_id=user_b, journal_id=saved_entry.id, data=JournalUpdateRequest(title="Hacked Title")
-    )
-    assert unauth_updated is None, "Security violation: User B updated User A's journal"
+        unauth_updated = await journal_repository.update_journal(
+            user_id=user_b, journal_id=saved_entry.id, data=JournalUpdateRequest(title="Hacked Title")
+        )
+        assert unauth_updated is None, "Security violation: User B updated User A's journal"
 
-    unauth_deleted = await journal_repository.delete_journal(user_id=user_b, journal_id=saved_entry.id)
-    assert unauth_deleted is False, "Security violation: User B deleted User A's journal"
+        unauth_deleted = await journal_repository.delete_journal(user_id=user_b, journal_id=saved_entry.id)
+        assert unauth_deleted is False, "Security violation: User B deleted User A's journal"
 
-    # 6. Delete entry as User A
-    deleted = await journal_repository.delete_journal(user_id=user_a, journal_id=saved_entry.id)
-    assert deleted is True
+        # 6. Delete entry as User A
+        deleted = await journal_repository.delete_journal(user_id=user_a, journal_id=saved_entry.id)
+        assert deleted is True
 
-    # 7. Verify entry is gone
-    post_del = await journal_repository.get_journal_by_id(user_id=user_a, journal_id=saved_entry.id)
-    assert post_del is None
-    print("✓ test_journal_crud_and_user_isolation passed!")
+        # 7. Verify entry is gone
+        post_del = await journal_repository.get_journal_by_id(user_id=user_a, journal_id=saved_entry.id)
+        assert post_del is None
+        print("✓ test_journal_crud_and_user_isolation passed!")
+    finally:
+        journal_repository._get_client = orig_client
 
 
 def test_journal_domain_isolation_from_memory():
@@ -190,19 +195,23 @@ def test_journal_domain_isolation_from_memory():
 
 async def test_privacy_safe_logging():
     """Verify that sensitive journal transcripts are NEVER included in logger outputs."""
-    log_capture = io.StringIO()
-    handler = logging.StreamHandler(log_capture)
-    test_logger = logging.getLogger("solace.journal_service")
-    test_logger.addHandler(handler)
-    test_logger.setLevel(logging.INFO)
+    set_custom_ai_provider(MockReflectionProvider())
+    try:
+        log_capture = io.StringIO()
+        handler = logging.StreamHandler(log_capture)
+        test_logger = logging.getLogger("solace.journal_service")
+        test_logger.addHandler(handler)
+        test_logger.setLevel(logging.INFO)
 
-    secret_text = "ULTRA_CONFIDENTIAL_JOURNAL_CONTENT_98765"
-    await journal_service.generate_reflection(JournalReflectionRequest(transcript=secret_text))
+        secret_text = "ULTRA_CONFIDENTIAL_JOURNAL_CONTENT_98765"
+        await journal_service.generate_reflection(JournalReflectionRequest(transcript=secret_text))
 
-    logged_output = log_capture.getvalue()
-    assert secret_text not in logged_output, "PRIVACY VIOLATION: Journal transcript was printed to logs!"
-    test_logger.removeHandler(handler)
-    print("✓ test_privacy_safe_logging passed!")
+        logged_output = log_capture.getvalue()
+        assert secret_text not in logged_output, "PRIVACY VIOLATION: Journal transcript was printed to logs!"
+        test_logger.removeHandler(handler)
+        print("✓ test_privacy_safe_logging passed!")
+    finally:
+        set_custom_ai_provider(None)
 
 
 async def test_transcription_payload_validation():

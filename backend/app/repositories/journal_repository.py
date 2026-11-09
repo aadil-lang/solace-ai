@@ -63,10 +63,12 @@ class JournalRepository:
                         created_at=str(r["created_at"]),
                         updated_at=str(r.get("updated_at", r["created_at"])),
                     )
+                raise RuntimeError("Supabase returned empty response on journal insert")
             except Exception as e:
-                logger.warning(f"Supabase save journal query failed, falling back to local: {e}")
+                logger.error(f"Supabase save journal query failed for user {user_id}: {e}")
+                raise e
 
-        # Local fallback store
+        # Local in-memory fallback store (Used strictly when Supabase client is unconfigured / offline test mode)
         if user_id not in _in_memory_journals:
             _in_memory_journals[user_id] = []
         _in_memory_journals[user_id].insert(0, payload)
@@ -116,9 +118,10 @@ class JournalRepository:
                     total = res.count if res.count is not None else len(items)
                     return items, total
             except Exception as e:
-                logger.warning(f"Supabase get journals query failed, falling back to local: {e}")
+                logger.error(f"Supabase get journals query failed for user {user_id}: {e}")
+                raise e
 
-        # Local fallback
+        # Local fallback (offline test mode)
         all_user_items = _in_memory_journals.get(user_id, [])
         sliced = all_user_items[offset : offset + limit]
         return [
@@ -166,7 +169,8 @@ class JournalRepository:
                     )
                 return None
             except Exception as e:
-                logger.warning(f"Supabase get journal by ID failed, falling back to local: {e}")
+                logger.error(f"Supabase get journal by ID failed for user {user_id}: {e}")
+                raise e
 
         for item in _in_memory_journals.get(user_id, []):
             if item["id"] == journal_id:
@@ -225,7 +229,8 @@ class JournalRepository:
                     )
                 return None
             except Exception as e:
-                logger.warning(f"Supabase update journal query failed, falling back to local: {e}")
+                logger.error(f"Supabase update journal query failed for user {user_id}: {e}")
+                raise e
 
         # Local fallback
         for item in _in_memory_journals.get(user_id, []):
@@ -270,7 +275,8 @@ class JournalRepository:
                     return True
                 return False
             except Exception as e:
-                logger.warning(f"Supabase delete journal query failed, falling back to local: {e}")
+                logger.error(f"Supabase delete journal query failed for user {user_id}: {e}")
+                raise e
 
         # Local fallback
         user_items = _in_memory_journals.get(user_id, [])
@@ -282,3 +288,4 @@ class JournalRepository:
 
 
 journal_repository = JournalRepository()
+

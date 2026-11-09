@@ -90,8 +90,19 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
   useEffect(() => {
     if (visible) {
       fetchEntries();
+    } else if (isRecording) {
+      cancelRecording();
     }
-  }, [visible, fetchEntries]);
+  }, [visible, isRecording, fetchEntries, cancelRecording]);
+
+  // Ensure microphone and audio session are deallocated on unmount
+  useEffect(() => {
+    return () => {
+      if (useJournalStore.getState().isRecording) {
+        useJournalStore.getState().cancelRecording();
+      }
+    };
+  }, []);
 
   // Sync edit state when selecting an entry
   useEffect(() => {
@@ -101,6 +112,13 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
       setIsEditingEntry(false);
     }
   }, [selectedEntry]);
+
+  const handleModalClose = () => {
+    if (isRecording) {
+      cancelRecording();
+    }
+    onClose();
+  };
 
   const formatTimer = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -204,7 +222,7 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleModalClose}>
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
@@ -213,7 +231,7 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
               <Ionicons name="mic-outline" size={14} color={brandColors.warmAccent} />
               <Text style={styles.badgeText}>VOICE JOURNAL</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <TouchableOpacity onPress={handleModalClose} style={styles.closeBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons name="close" size={22} color={brandColors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -538,6 +556,12 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
                           <Text style={styles.moodTagBadgeText}>{selectedEntry.mood_tag}</Text>
                         </View>
                       )}
+                      {selectedEntry.sync_status === 'pending_sync' && (
+                        <View style={styles.pendingSyncPill}>
+                          <Ionicons name="cloud-offline-outline" size={11} color="#D97706" />
+                          <Text style={styles.pendingSyncPillText}>Pending Sync</Text>
+                        </View>
+                      )}
                     </View>
 
                     <Text style={styles.detailTitle}>{selectedEntry.title}</Text>
@@ -630,6 +654,12 @@ export const VoiceJournalModal: React.FC<VoiceJournalModalProps> = ({ visible, o
                         {entry.mood_tag && (
                           <View style={styles.moodPill}>
                             <Text style={styles.moodPillText}>{entry.mood_tag}</Text>
+                          </View>
+                        )}
+                        {entry.sync_status === 'pending_sync' && (
+                          <View style={styles.pendingSyncPill}>
+                            <Ionicons name="cloud-offline-outline" size={10} color="#D97706" />
+                            <Text style={styles.pendingSyncPillText}>Pending</Text>
                           </View>
                         )}
                         {entry.reflection && (
@@ -1314,6 +1344,20 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
+  pendingSyncPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  pendingSyncPillText: {
+    fontSize: 10,
+    color: '#D97706',
+    fontWeight: theme.typography.weights.medium,
+  },
   entryCardTitle: {
     fontSize: 15,
     fontWeight: theme.typography.weights.semibold,
@@ -1328,3 +1372,4 @@ const styles = StyleSheet.create({
 });
 
 export default VoiceJournalModal;
+

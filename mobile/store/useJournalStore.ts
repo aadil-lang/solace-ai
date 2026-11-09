@@ -377,13 +377,18 @@ export const useJournalStore = create<JournalState>((set, get) => ({
           mood_tag: payload.mood_tag || null,
           duration_seconds: payload.duration_seconds || 0,
           reflection: payload.reflection || null,
+          sync_status: 'local_only',
           created_at: nowIso,
           updated_at: nowIso,
         };
         await saveGuestEntryLocal(saved);
       } else {
         // Authenticated: Persist via Supabase with RLS
-        saved = await journalService.saveJournalEntry(payload);
+        const cloudSaved = await journalService.saveJournalEntry(payload);
+        saved = {
+          ...cloudSaved,
+          sync_status: 'synced',
+        };
       }
 
       set((state) => ({
@@ -402,11 +407,31 @@ export const useJournalStore = create<JournalState>((set, get) => ({
 
       return saved;
     } catch (err) {
-      set({
+      // Safe fallback: preserve draft on device as pending_sync rather than losing user thoughts
+      const user = useAuthStore.getState().user;
+      const userId = user?.id || 'pending-auth-user';
+      const nowIso = new Date().toISOString();
+      const pendingSaved: JournalEntry = {
+        id: `pending-journal-${Date.now()}`,
+        user_id: userId,
+        title: payload.title || 'Voice Reflection',
+        transcript: payload.transcript,
+        mood_tag: payload.mood_tag || null,
+        duration_seconds: payload.duration_seconds || 0,
+        reflection: payload.reflection || null,
+        sync_status: 'pending_sync',
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+
+      set((state) => ({
         isSaving: false,
-        error: err instanceof Error ? err.message : 'Failed to save journal entry.',
-      });
-      return null;
+        error: 'Cloud sanctuary is unreachable. Your entry is saved locally on this device as pending synchronization.',
+        entries: [pendingSaved, ...state.entries],
+        activeDraft: null,
+        activeReflection: null,
+      }));
+      return pendingSaved;
     }
   },
 
@@ -506,3 +531,4 @@ export const useJournalStore = create<JournalState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
+

@@ -7,6 +7,7 @@ export interface JournalEntry {
   duration_seconds: number;
   reflection?: string | null;
   metadata?: Record<string, any>;
+  sync_status?: 'synced' | 'pending_sync' | 'local_only';
   created_at: string;
   updated_at: string;
 }
@@ -36,3 +37,4 @@ export interface JournalListResponse {
   items: JournalEntry[];
   total: number;
 }
+

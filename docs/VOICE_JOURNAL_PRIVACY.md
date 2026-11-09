@@ -103,3 +103,4 @@ When a user taps **"Reflect on this entry"**:
   - **Tele-MANAS**: 14416 (24/7 toll-free mental health helpline).
   - **National Emergency**: 112.
 - **Non-Diagnostic Policy**: Solace AI and Voice Journal reflections explicitly state that they do not provide medical diagnoses, psychiatric therapy, or clinical interventions.
+

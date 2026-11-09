@@ -45,3 +45,4 @@ class JournalReflectionRequest(BaseModel):
 class JournalReflectionResponse(BaseModel):
     reflection: str = Field(description="Warm, grounded reflection without unsolicited advice")
     is_crisis_override: bool = Field(default=False, description="True if input triggered safety crisis screening")
+
