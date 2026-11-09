@@ -19,6 +19,7 @@ import { useCheckInStore } from '@/store/useCheckInStore';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { MoodType, MoodOption, WellnessActivity } from '@/types';
+import { EmotionalLandscapeModal } from '@/components/EmotionalLandscapeModal';
 
 const MOODS: MoodOption[] = [
   { id: 'peaceful', label: 'Peaceful', icon: 'sunny-outline', color: '#4E7A58', bgColor: '#E8F1EB' },
@@ -74,6 +75,7 @@ export default function HomeScreen() {
   const [note, setNote] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [checkInSaved, setCheckInSaved] = useState<boolean>(false);
+  const [isLandscapeModalOpen, setIsLandscapeModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetchHistory();
@@ -354,7 +356,14 @@ export default function HomeScreen() {
         <Card style={styles.progressCard}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Your Reflection History</Text>
-            <Ionicons name="bar-chart-outline" size={18} color={theme.colors.textMuted} />
+            <TouchableOpacity
+              onPress={() => setIsLandscapeModalOpen(true)}
+              style={styles.exploreLandscapeBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.exploreLandscapeText}>Explore Landscape</Text>
+              <Ionicons name="chevron-forward" size={13} color={theme.colors.forest} />
+            </TouchableOpacity>
           </View>
 
           {checkIns.length > 0 ? (
@@ -407,6 +416,12 @@ export default function HomeScreen() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Emotional Landscape Sanctuary Modal */}
+      <EmotionalLandscapeModal
+        visible={isLandscapeModalOpen}
+        onClose={() => setIsLandscapeModalOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -727,6 +742,20 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     backgroundColor: theme.colors.surface,
+  },
+  exploreLandscapeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.sageLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.radius.full,
+  },
+  exploreLandscapeText: {
+    fontSize: 11,
+    color: theme.colors.forest,
+    fontWeight: theme.typography.weights.semibold,
   },
   historyContainer: {
     gap: theme.spacing.md,

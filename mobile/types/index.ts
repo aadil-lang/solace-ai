@@ -59,6 +59,8 @@ export interface CheckIn {
   mood: MoodType;
   intensity: number; // 1-5
   note?: string | null;
+  is_meaningful?: boolean;
+  sync_status?: 'synced' | 'pending_sync' | 'local_only';
   created_at: string;
 }
 
@@ -66,11 +68,50 @@ export interface CheckInCreate {
   mood: MoodType;
   intensity: number;
   note?: string | null;
+  is_meaningful?: boolean;
+  created_at?: string;
 }
 
 export interface CheckInHistoryResponse {
   items: CheckIn[];
   total: number;
+}
+
+// Phase 4: Emotional Landscape
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+export type TimeframeType = '7d' | '30d' | 'all' | 'moment';
+
+export interface SeasonDistributionItem {
+  mood: MoodType;
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+export interface LandscapeSummary {
+  timeframe: '7d' | '30d' | 'all';
+  total_moments: number;
+  season_distribution: SeasonDistributionItem[];
+  dominant_season: MoodType | null;
+  average_intensity: number | null;
+  meaningful_moments_count: number;
+  busiest_time_of_day: TimeOfDay | null;
+}
+
+export interface LandscapeReflectionResponse {
+  reflection: string;
+  is_crisis_override: boolean;
+  dominant_season?: string | null;
+}
+
+export interface LandscapeReflectionRecord {
+  id: string;
+  user_id: string;
+  timeframe: string;
+  reflection: string;
+  dominant_mood?: string | null;
+  created_at: string;
 }
 
 export interface MoodOption {

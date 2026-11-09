@@ -22,6 +22,9 @@ import {
   JournalUpdateInput,
   JournalReflectionResponse,
   JournalListResponse,
+  LandscapeSummary,
+  LandscapeReflectionResponse,
+  LandscapeReflectionRecord,
 } from '@/types';
 
 export interface ChatStreamCallbacks {
@@ -159,14 +162,115 @@ class ApiService {
     return response.json();
   }
 
-  public async getCheckInHistory(limit: number = 20, offset: number = 0, token?: string | null): Promise<CheckInHistoryResponse> {
-    const endpoint = `${API_CONFIG.endpoints.checkInHistory}?limit=${limit}&offset=${offset}`;
+  public async getCheckInHistory(
+    limit: number = 20,
+    offset: number = 0,
+    meaningfulOnly: boolean = false,
+    token?: string | null
+  ): Promise<CheckInHistoryResponse> {
+    const endpoint = `${API_CONFIG.endpoints.checkInHistory}?limit=${limit}&offset=${offset}&meaningful_only=${meaningfulOnly}`;
     const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, token);
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err?.error?.message || `Failed to fetch check-in history (${response.status})`);
     }
     return response.json();
+  }
+
+  public async toggleCheckInMeaningful(
+    checkInId: string,
+    isMeaningful: boolean,
+    token?: string | null
+  ): Promise<CheckIn> {
+    const endpoint = `${API_CONFIG.endpoints.checkIns}/${checkInId}/meaningful`;
+    const response = await this.fetchWithTimeout(
+      endpoint,
+      { method: 'PATCH', body: JSON.stringify({ is_meaningful: isMeaningful }) },
+      token
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to update meaningful bookmark (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async getLandscapeSummary(
+    timeframe: '7d' | '30d' | 'all' = '7d',
+    tz: string = 'UTC',
+    token?: string | null
+  ): Promise<LandscapeSummary> {
+    const endpoint = `${API_CONFIG.endpoints.landscapeSummary}?timeframe=${timeframe}&tz=${encodeURIComponent(tz)}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, token);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to fetch landscape summary (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async generateLandscapeReflection(
+    timeframe: string = '7d',
+    selectedCheckIns?: CheckIn[],
+    token?: string | null
+  ): Promise<LandscapeReflectionResponse> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.landscapeReflect,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          timeframe,
+          selected_check_ins: selectedCheckIns || undefined,
+        }),
+      },
+      token
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to generate reflection (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async saveLandscapeReflection(
+    data: { timeframe: string; reflection: string; dominant_mood?: string | null },
+    token?: string | null
+  ): Promise<LandscapeReflectionRecord> {
+    const response = await this.fetchWithTimeout(
+      API_CONFIG.endpoints.landscapeReflections,
+      { method: 'POST', body: JSON.stringify(data) },
+      token
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to save reflection (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async getSavedLandscapeReflections(
+    limit: number = 20,
+    offset: number = 0,
+    token?: string | null
+  ): Promise<{ items: LandscapeReflectionRecord[]; total: number }> {
+    const endpoint = `${API_CONFIG.endpoints.landscapeReflections}?limit=${limit}&offset=${offset}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'GET' }, token);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || `Failed to fetch saved reflections (${response.status})`);
+    }
+    return response.json();
+  }
+
+  public async deleteSavedLandscapeReflection(
+    reflectionId: string,
+    token?: string | null
+  ): Promise<void> {
+    const endpoint = `${API_CONFIG.endpoints.landscapeReflections}/${reflectionId}`;
+    const response = await this.fetchWithTimeout(endpoint, { method: 'DELETE' }, token);
+    if (!response.ok) {
+      throw new Error(`Failed to delete saved reflection (${response.status})`);
+    }
   }
 
   public async deleteCheckIn(checkInId: string, token?: string | null): Promise<void> {

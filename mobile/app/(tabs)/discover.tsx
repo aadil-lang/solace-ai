@@ -18,6 +18,7 @@ import { WellnessActivity } from '@/types';
 import { BoxBreathingVisualizer } from '@/components/BoxBreathingVisualizer';
 import { PoetryModal } from '@/components/PoetryModal';
 import { VoiceJournalModal } from '@/components/VoiceJournalModal';
+import { EmotionalLandscapeModal } from '@/components/EmotionalLandscapeModal';
 
 const ACTIVITIES: WellnessActivity[] = [
   {
@@ -78,6 +79,7 @@ export default function DiscoverScreen() {
   const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(false);
   const [isPoetryModalOpen, setIsPoetryModalOpen] = useState<boolean>(false);
   const [isJournalModalOpen, setIsJournalModalOpen] = useState<boolean>(false);
+  const [isLandscapeModalOpen, setIsLandscapeModalOpen] = useState<boolean>(false);
 
   const filtered = filter === 'all'
     ? ACTIVITIES
@@ -144,6 +146,27 @@ export default function DiscoverScreen() {
           </View>
           <View style={styles.journalIconCircle}>
             <Ionicons name="mic" size={24} color={theme.colors.forest} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Emotional Landscape — Mood-Responsive Atmospheric Sanctuary */}
+        <TouchableOpacity
+          style={styles.landscapeBanner}
+          onPress={() => setIsLandscapeModalOpen(true)}
+          activeOpacity={0.88}
+        >
+          <View style={styles.wosBannerLeft}>
+            <View style={styles.landscapeBadgeRow}>
+              <Ionicons name="compass" size={13} color="#52796F" />
+              <Text style={styles.landscapeBadgeText}>EMOTIONAL LANDSCAPE</Text>
+            </View>
+            <Text style={styles.wosBannerTitle}>Atmospheric Journey</Text>
+            <Text style={styles.wosBannerSubtitle}>
+              Your feelings move through seasons. Notice your journey, one moment at a time.
+            </Text>
+          </View>
+          <View style={styles.landscapeIconCircle}>
+            <Ionicons name="compass-outline" size={24} color="#52796F" />
           </View>
         </TouchableOpacity>
 
@@ -280,6 +303,12 @@ export default function DiscoverScreen() {
       <VoiceJournalModal
         visible={isJournalModalOpen}
         onClose={() => setIsJournalModalOpen(false)}
+      />
+
+      {/* Emotional Landscape Sanctuary Modal */}
+      <EmotionalLandscapeModal
+        visible={isLandscapeModalOpen}
+        onClose={() => setIsLandscapeModalOpen(false)}
       />
     </SafeAreaView>
   );
@@ -538,6 +567,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#D4E5DB',
+  },
+  landscapeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0F5F4',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#D0E0DC',
+    elevation: 2,
+    shadowColor: '#52796F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  landscapeBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  landscapeBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#52796F',
+    letterSpacing: 0.8,
+  },
+  landscapeIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D0E0DC',
   },
 });
 

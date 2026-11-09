@@ -1,6 +1,21 @@
 from app.schemas.health import HealthResponse
 from app.schemas.profile import ProfileResponse, ProfileUpdate
-from app.schemas.check_in import CheckInCreate, CheckInResponse, CheckInHistoryResponse, MoodType
+from app.schemas.check_in import (
+    CheckInCreate,
+    CheckInResponse,
+    CheckInHistoryResponse,
+    CheckInMeaningfulUpdate,
+    LandscapeSummaryResponse,
+    SeasonDistributionItem,
+    LandscapeReflectionRequest,
+    LandscapeReflectionResponse,
+    LandscapeReflectionCreate,
+    LandscapeReflectionRecord,
+    LandscapeReflectionsListResponse,
+    MoodType,
+    TimeframeType,
+    TimeOfDay,
+)
 from app.schemas.conversation import (
     ConversationSessionCreate,
     ConversationSessionResponse,
@@ -42,7 +57,17 @@ __all__ = [
     "CheckInCreate",
     "CheckInResponse",
     "CheckInHistoryResponse",
+    "CheckInMeaningfulUpdate",
+    "LandscapeSummaryResponse",
+    "SeasonDistributionItem",
+    "LandscapeReflectionRequest",
+    "LandscapeReflectionResponse",
+    "LandscapeReflectionCreate",
+    "LandscapeReflectionRecord",
+    "LandscapeReflectionsListResponse",
     "MoodType",
+    "TimeframeType",
+    "TimeOfDay",
     "ConversationSessionCreate",
     "ConversationSessionResponse",
     "ConversationMessageCreate",

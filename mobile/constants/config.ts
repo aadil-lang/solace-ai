@@ -38,6 +38,9 @@ export const API_CONFIG = {
     journalReflect: '/api/v1/journal/reflect',
     journalSave: '/api/v1/journal/save',
     journalEntries: '/api/v1/journal/entries',
+    landscapeSummary: '/api/v1/check-ins/landscape/summary',
+    landscapeReflect: '/api/v1/check-ins/landscape/reflect',
+    landscapeReflections: '/api/v1/check-ins/landscape/reflections',
   },
 } as const;
 
