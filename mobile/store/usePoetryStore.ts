@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { apiService } from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ExpoSecureStoreAdapter } from '@/services/supabaseStorage';
 import {
   PoetryFormat,
   PoetryTheme,
@@ -11,6 +12,8 @@ import {
   SavedPoem,
   SavedPoemCreate,
 } from '@/types';
+
+const GUEST_POEMS_KEY = '@solace_guest_saved_poems';
 
 interface PoetryState {
   selectedFormat: PoetryFormat;
@@ -126,7 +129,7 @@ export const usePoetryStore = create<PoetryState>((set, get) => ({
     };
 
     if (isGuest) {
-      // Local-only guest storage: never create cloud database records
+      // Local-only guest storage: persists across restarts but never creates cloud records
       const guestPoem: SavedPoem = {
         id: `guest_poem_${Date.now()}`,
         user_id: 'guest',
@@ -141,6 +144,12 @@ export const usePoetryStore = create<PoetryState>((set, get) => ({
       };
 
       guestLocalSavedPoems = [guestPoem, ...guestLocalSavedPoems];
+      try {
+        await ExpoSecureStoreAdapter.setItem(GUEST_POEMS_KEY, JSON.stringify(guestLocalSavedPoems));
+      } catch (err) {
+        console.warn('Failed to persist guest poem to local storage:', err);
+      }
+
       set((state) => ({
         savedPoems: [guestPoem, ...state.savedPoems],
         isSaving: false,
@@ -168,6 +177,15 @@ export const usePoetryStore = create<PoetryState>((set, get) => ({
     const isGuest = useAuthStore.getState().isGuest;
 
     if (isGuest) {
+      set({ isLoadingSaved: true, error: null });
+      try {
+        const stored = await ExpoSecureStoreAdapter.getItem(GUEST_POEMS_KEY);
+        if (stored) {
+          guestLocalSavedPoems = JSON.parse(stored);
+        }
+      } catch (err) {
+        console.warn('Failed to load guest poems from local storage:', err);
+      }
       set({ savedPoems: [...guestLocalSavedPoems], isLoadingSaved: false });
       return;
     }
@@ -193,6 +211,11 @@ export const usePoetryStore = create<PoetryState>((set, get) => ({
 
     if (isGuest) {
       guestLocalSavedPoems = guestLocalSavedPoems.filter((p) => p.id !== poemId);
+      try {
+        await ExpoSecureStoreAdapter.setItem(GUEST_POEMS_KEY, JSON.stringify(guestLocalSavedPoems));
+      } catch (err) {
+        console.warn('Failed to update guest poems in local storage:', err);
+      }
       set((state) => ({
         savedPoems: state.savedPoems.filter((p) => p.id !== poemId),
       }));
@@ -215,3 +238,4 @@ export const usePoetryStore = create<PoetryState>((set, get) => ({
   clearActivePoem: () => set({ activePoem: null, isCurrentPoemSaved: false, error: null }),
   clearError: () => set({ error: null }),
 }));
+

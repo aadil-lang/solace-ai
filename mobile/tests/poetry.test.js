@@ -33,14 +33,19 @@ const truncated = truncateContext(longText);
 assert.strictEqual(truncated.length, 300);
 console.log('✓ 300-character context ceiling enforced.');
 
-// 4. Guest Mode isolation logic
-console.log('[4/6] Testing Guest Mode Local Storage Partitioning...');
+// 4. Guest Mode isolation & persistence logic
+console.log('[4/6] Testing Guest Mode Local Storage Partitioning & Restart Persistence...');
 let mockCloudSavedCount = 0;
+let mockSecureStore = {};
 let mockGuestLocalSaved = [];
+
+const GUEST_KEY = '@solace_guest_saved_poems';
 
 const savePoem = (isGuest, poem) => {
   if (isGuest) {
-    mockGuestLocalSaved.push({ ...poem, id: `guest_${Date.now()}` });
+    const item = { ...poem, id: `guest_${Date.now()}` };
+    mockGuestLocalSaved.push(item);
+    mockSecureStore[GUEST_KEY] = JSON.stringify(mockGuestLocalSaved);
     return true;
   }
   mockCloudSavedCount++;
@@ -52,10 +57,18 @@ savePoem(true, { title: 'Quiet Breath', content: 'Lines of verse' });
 assert.strictEqual(mockGuestLocalSaved.length, 1);
 assert.strictEqual(mockCloudSavedCount, 0, 'Guest poem must NEVER be pushed to cloud storage');
 
+// Simulate app restart: memory array is cleared, then re-hydrated from storage
+mockGuestLocalSaved = [];
+assert.strictEqual(mockGuestLocalSaved.length, 0);
+const restored = JSON.parse(mockSecureStore[GUEST_KEY]);
+mockGuestLocalSaved = restored;
+assert.strictEqual(mockGuestLocalSaved.length, 1);
+assert.strictEqual(mockGuestLocalSaved[0].title, 'Quiet Breath');
+
 // Simulate authenticated save
 savePoem(false, { title: 'Authenticated Poem', content: 'Lines of verse' });
 assert.strictEqual(mockCloudSavedCount, 1);
-console.log('✓ Guest mode local storage isolation verified.');
+console.log('✓ Guest mode local storage isolation and restart persistence verified.');
 
 // 5. Urdu RTL detection and styling
 console.log('[5/6] Testing Urdu Script RTL Text Alignment...');
@@ -97,3 +110,4 @@ console.log('✓ Clipboard formatted export verified.');
 console.log('\n=============================================================');
 console.log('ALL MOBILE WORDS OF SOLACE (POETRY) TESTS PASSED!');
 console.log('=============================================================');
+

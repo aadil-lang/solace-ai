@@ -141,17 +141,26 @@ async def test_all_supported_themes():
 
 
 async def test_crisis_safety_override():
-    """Verify that crisis language in context triggers immediate safety override."""
-    req = PoetryGenerateRequest(
-        format=PoetryFormat.ENGLISH,
-        theme=PoetryTheme.MOMENT_OF_CALM,
-        context="I just want to end my life right now.",
-    )
-    res = await poetry_service.generate_poetry(req)
-    assert res.is_crisis is True, "Crisis safety override failed to trigger"
-    assert "14416" in res.reflection, "Missing Tele-MANAS helpline in crisis reflection"
-    assert "112" in res.reflection, "Missing Emergency 112 in crisis reflection"
-    print("✓ test_crisis_safety_override passed!")
+    """Verify that crisis language in context triggers immediate safety override across English, Roman Urdu, and Urdu."""
+    test_contexts = [
+        "I just want to end my life right now.",
+        "Main khudkushi karne ka soch raha hoon.",
+        "میں اپنی جان لینا چاہتا ہوں",
+    ]
+
+    for ctx in test_contexts:
+        req = PoetryGenerateRequest(
+            format=PoetryFormat.ENGLISH,
+            theme=PoetryTheme.MOMENT_OF_CALM,
+            context=ctx,
+        )
+        res = await poetry_service.generate_poetry(req)
+        assert res.is_crisis is True, f"Crisis safety override failed for context: {ctx}"
+        assert "14416" in res.reflection, "Missing Tele-MANAS helpline in crisis reflection"
+        assert "112" in res.reflection, "Missing Emergency 112 in crisis reflection"
+        # Verify that creative poetry generation was bypassed
+        assert "A Safe Space for You" in res.title
+    print("✓ test_crisis_safety_override (English, Roman Urdu, Urdu script) passed!")
 
 
 async def test_malformed_and_error_fallbacks():

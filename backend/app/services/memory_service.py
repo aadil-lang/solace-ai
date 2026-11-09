@@ -70,6 +70,13 @@ HIGH_RISK_PATTERNS = [
     re.compile(r"\b(?:no\s+reason\s+to\s+(?:live|go\s+on))\b", re.IGNORECASE),
     re.compile(r"\b(?:don't|do\s+not)\s+want\s+to\s+(?:live|be\s+alive|exist|wake\s+up)\b", re.IGNORECASE),
     re.compile(r"\b(?:can't|cannot)\s+(?:take\s+it|go\s+on|live\s+like\s+this)\s+anymore\b", re.IGNORECASE),
+    # Multilingual (Roman Urdu & Urdu Script) crisis patterns
+    re.compile(r"\b(?:khudkushi|khud-kushi)\b", re.IGNORECASE),
+    re.compile(r"\b(?:apni\s+jaan\s+(?:lena|lene|khatam|de\s+dena))\b", re.IGNORECASE),
+    re.compile(r"\b(?:marna\s+chahta|marna\s+chahti)\s+hoon\b", re.IGNORECASE),
+    re.compile(r"(?:خودکشی)", re.IGNORECASE),
+    re.compile(r"(?:اپنی\s+جان\s+(?:لینا|لینے|ختم))", re.IGNORECASE),
+    re.compile(r"(?:مرنا\s+چاہتا\s+ہوں|مرنا\s+چاہتی\s+ہوں)", re.IGNORECASE),
 ]
 
 # Patterns that indicate figurative/idiomatic speech rather than actual crisis

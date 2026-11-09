@@ -51,3 +51,4 @@ BEGIN
         CREATE POLICY "Users can delete own saved poems" ON public.words_of_solace FOR DELETE USING (auth.uid() = user_id);
     END IF;
 END $$;
+
